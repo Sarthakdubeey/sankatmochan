@@ -21,6 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
+import { errorEmitter } from '@/lib/firebase/error-emitter';
+import { FirestorePermissionError } from '@/lib/firebase/errors';
+
 
 const ResourceMap = dynamic(() => import('@/components/resource-map'), { 
     ssr: false,
@@ -60,6 +63,10 @@ export default function ResourceLocatorPage() {
                 needs.push({ id: doc.id, ...doc.data() } as ResourceNeed);
             });
             setResourceNeeds(needs);
+        },
+        async (err) => {
+            const permissionError = new FirestorePermissionError({ path: resourceNeedsQuery.path, operation: 'list' });
+            errorEmitter.emit('permission-error', permissionError);
         });
 
         return () => {
@@ -166,3 +173,5 @@ export default function ResourceLocatorPage() {
     </div>
   );
 }
+
+    

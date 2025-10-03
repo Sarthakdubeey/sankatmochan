@@ -39,6 +39,9 @@ import { db } from '@/lib/firebase/firebase';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { resources } from '@/lib/data';
+import { errorEmitter } from '@/lib/firebase/error-emitter';
+import { FirestorePermissionError } from '@/lib/firebase/errors';
+
 
 const ResourceMap = dynamic(() => import('@/components/resource-map'), { 
     ssr: false,
@@ -105,28 +108,34 @@ export default function AdminAlertPage() {
 
         setAlerts(fetchedAlerts);
         setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching alerts: ", error);
-        toast({ title: "Error", description: "Failed to fetch alerts.", variant: "destructive" });
-        setIsLoading(false);
+    },
+    async (error) => {
+      const permissionError = new FirestorePermissionError({ path: alertsQuery.path, operation: 'list' });
+      errorEmitter.emit('permission-error', permissionError);
+      toast({ title: "Error", description: "Failed to fetch alerts.", variant: "destructive" });
+      setIsLoading(false);
     });
 
     const reportsQuery = query(collection(db, 'damage_reports'), orderBy('timestamp', 'desc'));
     const unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
         const fetchedReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DamageReport));
         setDamageReports(fetchedReports);
-    }, (error) => {
-        console.error("Error fetching damage reports: ", error);
-        toast({ title: "Error", description: "Failed to fetch damage reports.", variant: "destructive" });
+    },
+    async (error) => {
+      const permissionError = new FirestorePermissionError({ path: reportsQuery.path, operation: 'list' });
+      errorEmitter.emit('permission-error', permissionError);
+      toast({ title: "Error", description: "Failed to fetch damage reports.", variant: "destructive" });
     });
     
     const resourceNeedsQuery = query(collection(db, 'resource_needs'), orderBy('timestamp', 'desc'));
     const unsubscribeResourceNeeds = onSnapshot(resourceNeedsQuery, (snapshot) => {
         const needs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceNeed));
         setResourceNeeds(needs.filter(need => !need.fulfilled));
-    }, (error) => {
-        console.error("Error fetching resource needs: ", error);
-        toast({ title: "Error", description: "Failed to fetch resource needs.", variant: "destructive" });
+    },
+    async (error) => {
+      const permissionError = new FirestorePermissionError({ path: resourceNeedsQuery.path, operation: 'list' });
+      errorEmitter.emit('permission-error', permissionError);
+      toast({ title: "Error", description: "Failed to fetch resource needs.", variant: "destructive" });
     });
 
 

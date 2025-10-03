@@ -26,6 +26,8 @@ import { useLanguage } from '@/hooks/use-language';
 import dynamic from 'next/dynamic';
 import { indianDistricts, resources } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { errorEmitter } from '@/lib/firebase/error-emitter';
+import { FirestorePermissionError } from '@/lib/firebase/errors';
 
 
 const ResourceMap = dynamic(() => import('@/components/resource-map'), { 
@@ -107,8 +109,10 @@ export default function DashboardPage() {
         setAlerts(sortedAlerts);
         setError(null);
         setLoading(false);
-    }, (err) => {
-        console.error("Error fetching alerts:", err);
+    },
+    async (err) => {
+        const permissionError = new FirestorePermissionError({ path: alertsQuery.path, operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
         setError(t('error_failed_to_load_alerts'));
         setLoading(false);
     });
@@ -129,6 +133,10 @@ export default function DashboardPage() {
             needs.push({ id: doc.id, ...doc.data() } as ResourceNeed);
         });
         setResourceNeeds(needs);
+    },
+    async (err) => {
+        const permissionError = new FirestorePermissionError({ path: resourceNeedsQuery.path, operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
     });
     
     const reportsQuery = query(collection(db, 'damage_reports'));
