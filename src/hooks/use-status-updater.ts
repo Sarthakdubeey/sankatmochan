@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserStatus } from '@/lib/firebase/status';
@@ -9,7 +8,7 @@ import { GeoPoint, serverTimestamp } from 'firebase/firestore';
 import { AlertService } from '@/lib/firebase/alerts';
 
 // Helper function to get location with a Promise-based approach
-const getLocation = (): Promise<GeoPoint | null> => {
+const getLocation = (): Promise<{latitude: number, longitude: number} | null> => {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
       console.warn('Geolocation is not supported by this browser.');
@@ -18,7 +17,10 @@ const getLocation = (): Promise<GeoPoint | null> => {
     }
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        resolve(new GeoPoint(position.coords.latitude, position.coords.longitude));
+        resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+        });
       },
       (error) => {
         console.warn('Could not get location: ', error.message);
@@ -45,13 +47,13 @@ export function useStatusUpdater() {
     }
 
     try {
-      const location = await getLocation();
-
+      const locationCoords = await getLocation();
+      const locationGeoPoint = locationCoords ? new GeoPoint(locationCoords.latitude, locationCoords.longitude) : null;
+      
+      // If status is 'help', create a critical alert in the 'alerts' collection
       if (status === 'help') {
-        const lat = location?.latitude.toFixed(4);
-        const lon = location?.longitude.toFixed(4);
-        const locationString = location
-          ? `at location: ${lat}, ${lon}`
+        const locationString = locationCoords
+          ? `at location: ${locationCoords.latitude.toFixed(4)}, ${locationCoords.longitude.toFixed(4)}`
           : 'at an unknown location';
 
         await AlertService.createAlert({
@@ -59,26 +61,27 @@ export function useStatusUpdater() {
           description: `A user has requested immediate assistance ${locationString}.`,
           severity: 'Critical',
           type: 'Other',
-          affectedAreas: location ? [`Lat: ${lat}, Lon: ${lon}`] : ['Location not available'],
+          affectedAreas: locationCoords ? [`Lat: ${locationCoords.latitude.toFixed(4)}, Lon: ${locationCoords.longitude.toFixed(4)}`] : ['Location not available'],
           createdBy: user.uid,
-          location: location || undefined,
+          location: locationGeoPoint || undefined,
           acknowledged: false,
           rescueStatus: null,
         });
       }
 
+      // Always update the user's general status in the 'user_status' collection for the live map
       await updateUserStatus({
         userId: user.uid,
         userName: user.displayName || 'Anonymous',
         userAvatarUrl: user.photoURL || undefined,
         status,
-        location,
+        location: locationGeoPoint,
         timestamp: serverTimestamp(),
       });
 
       toast({
         title: 'Status Updated',
-        description: `You've been marked as ${status}. Your location has ${location ? '' : 'not '}been shared.`,
+        description: `You've been marked as ${status}. Your location has ${locationCoords ? '' : 'not '}been shared.`,
       });
 
     } catch (error) {
