@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import type { Alert, DamageReport, Resource, UserStatus, ResourceNeed } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { Trash2, ShieldAlert, Building2, CheckCircle, MapPin, AlertTriangle, ShieldX, Loader2, User, PackageOpen, Truck } from 'lucide-react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { Timestamp, collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
@@ -78,7 +78,7 @@ export default function AdminAlertPage() {
   
   const selectedAreas = watch('affectedAreas');
   
-  const helpRequests = alerts.filter(a => a.severity === 'Critical' && !a.acknowledged);
+  const activeSosCount = alerts.filter(a => a.severity === 'Critical' && !a.acknowledged).length;
 
   useEffect(() => {
     if (loading) return;
@@ -93,10 +93,11 @@ export default function AdminAlertPage() {
     const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
         const fetchedAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert));
         
-        // Sort to show Critical alerts first
         fetchedAlerts.sort((a, b) => {
           if (a.severity === 'Critical' && b.severity !== 'Critical') return -1;
           if (a.severity !== 'Critical' && b.severity === 'Critical') return 1;
+          if (a.acknowledged && !b.acknowledged) return 1;
+          if (!a.acknowledged && b.acknowledged) return -1;
           if (a.timestamp && b.timestamp) return b.timestamp.toMillis() - a.timestamp.toMillis();
           return 0;
         });
@@ -220,8 +221,8 @@ export default function AdminAlertPage() {
     return acc;
   }, [] as { name: string; total: number }[]);
 
-  const mapCenter = helpRequests.length > 0 && helpRequests[0].location
-    ? [helpRequests[0].location.latitude, helpRequests[0].location.longitude] as [number, number]
+  const mapCenter = alerts.find(a => a.severity === 'Critical')?.location 
+    ? [alerts.find(a => a.severity === 'Critical')!.location!.latitude, alerts.find(a => a.severity === 'Critical')!.location!.longitude] as [number, number]
     : damageReports.length > 0 && damageReports[0].location
     ? [damageReports[0].location.latitude, damageReports[0].location.longitude] as [number, number]
     : [28.6139, 77.2090] as [number, number];
@@ -254,9 +255,9 @@ export default function AdminAlertPage() {
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{helpRequests.length}</div>
+            <div className="text-2xl font-bold text-destructive">{activeSosCount}</div>
             <p className="text-xs text-muted-foreground">
-              Users actively requesting help
+              Unacknowledged help requests
             </p>
           </CardContent>
         </Card>
@@ -435,7 +436,7 @@ export default function AdminAlertPage() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8">
          <Card>
             <CardHeader>
                 <CardTitle>Sent Alerts</CardTitle>
@@ -460,7 +461,7 @@ export default function AdminAlertPage() {
                             </TableHeader>
                             <TableBody>
                                 {alerts.map((alert) => (
-                                    <TableRow key={alert.id} className={alert.severity === 'Critical' ? 'bg-destructive/5' : ''}>
+                                    <TableRow key={alert.id} className={alert.severity === 'Critical' && !alert.acknowledged ? 'bg-destructive/10' : ''}>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-2">
                                                 {alert.severity === 'Critical' && <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0"/>}
@@ -499,7 +500,10 @@ export default function AdminAlertPage() {
                 )}
             </CardContent>
         </Card>
-        <Card>
+      </div>
+
+       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+         <Card>
             <CardHeader>
                 <CardTitle>Damage Report Severity</CardTitle>
                 <CardDescription>Breakdown of submitted damage reports by AI-assessed severity.</CardDescription>
@@ -532,8 +536,6 @@ export default function AdminAlertPage() {
                 )}
             </CardContent>
         </Card>
-      </div>
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <Card>
             <CardHeader>
                 <CardTitle>Active Resource Requests</CardTitle>
@@ -576,5 +578,3 @@ export default function AdminAlertPage() {
     </div>
   );
 }
-
-    
