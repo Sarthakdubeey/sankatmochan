@@ -110,7 +110,7 @@ export default function AdminAlertPage() {
         setIsLoading(false);
     },
     async (error) => {
-      const permissionError = new FirestorePermissionError({ path: alertsQuery.path, operation: 'list' });
+      const permissionError = new FirestorePermissionError({ path: 'alerts', operation: 'list' });
       errorEmitter.emit('permission-error', permissionError);
       toast({ title: "Error", description: "Failed to fetch alerts.", variant: "destructive" });
       setIsLoading(false);
@@ -122,7 +122,7 @@ export default function AdminAlertPage() {
         setDamageReports(fetchedReports);
     },
     async (error) => {
-      const permissionError = new FirestorePermissionError({ path: reportsQuery.path, operation: 'list' });
+      const permissionError = new FirestorePermissionError({ path: 'damage_reports', operation: 'list' });
       errorEmitter.emit('permission-error', permissionError);
       toast({ title: "Error", description: "Failed to fetch damage reports.", variant: "destructive" });
     });
@@ -133,7 +133,7 @@ export default function AdminAlertPage() {
         setResourceNeeds(needs.filter(need => !need.fulfilled));
     },
     async (error) => {
-      const permissionError = new FirestorePermissionError({ path: resourceNeedsQuery.path, operation: 'list' });
+      const permissionError = new FirestorePermissionError({ path: 'resource_needs', operation: 'list' });
       errorEmitter.emit('permission-error', permissionError);
       toast({ title: "Error", description: "Failed to fetch resource needs.", variant: "destructive" });
     });
@@ -583,5 +583,7 @@ export default function AdminAlertPage() {
     </div>
   );
 }
+
+    
 
     
