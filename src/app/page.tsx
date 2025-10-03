@@ -24,7 +24,8 @@ import { Building2, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useLanguage } from '@/hooks/use-language';
 import dynamic from 'next/dynamic';
-import { resources } from '@/lib/data';
+import { indianDistricts, resources } from '@/lib/data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const ResourceMap = dynamic(() => import('@/components/resource-map'), { 
@@ -58,6 +59,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSosAlerts, setActiveSosAlerts] = useState<Alert[]>([]);
+  const [districtFilter, setDistrictFilter] = useState<string>("All");
   
   const helpRequests = userStatuses.filter(s => s.status === 'help');
 
@@ -151,6 +153,10 @@ export default function DashboardPage() {
 
   }, [language, t, user]);
 
+  const filteredAlerts = districtFilter === "All"
+    ? alerts
+    : alerts.filter(alert => alert.affectedAreas.includes(districtFilter));
+
 
   return (
     <div className="space-y-8">
@@ -196,7 +202,20 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline"><ListFilter className="mr-2 h-4 w-4"/>{t('dashboard_filter')}</Button>
+            <Select value={districtFilter} onValueChange={setDistrictFilter}>
+                <SelectTrigger className="w-[180px]">
+                    <div className="flex items-center gap-2">
+                        <ListFilter className="h-4 w-4"/>
+                        <SelectValue placeholder="Filter by District" />
+                    </div>
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="All">All Districts</SelectItem>
+                    {indianDistricts.map(district => (
+                        <SelectItem key={district} value={district}>{district}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             <Button asChild><Link href="/resource-locator"><Map className="mr-2 h-4 w-4"/>{t('dashboard_map_view')}</Link></Button>
         </div>
       </div>
@@ -292,18 +311,18 @@ export default function DashboardPage() {
                 </Card>
               )}
 
-              {!loading && !error && alerts.length === 0 && (
+              {!loading && !error && filteredAlerts.length === 0 && (
                 <Card className="flex items-center justify-center h-64">
                     <div className="text-center">
                         <CardTitle>{t('dashboard_all_clear_title')}</CardTitle>
-                        <CardDescription>{t('dashboard_all_clear_desc')}</CardDescription>
+                        <CardDescription>{districtFilter === "All" ? t('dashboard_all_clear_desc') : `No active alerts for ${districtFilter}.`}</CardDescription>
                     </div>
                 </Card>
               )}
 
-              {!loading && !error && alerts.length > 0 && (
+              {!loading && !error && filteredAlerts.length > 0 && (
                 <div className="grid gap-6 md:grid-cols-2">
-                  {alerts.slice(0, 10).map((alert) => (
+                  {filteredAlerts.slice(0, 10).map((alert) => (
                     <Card key={alert.id} className={cn("flex flex-col border-l-4", severityStyles[alert.severity].split(' ')[0].replace('bg-','border-'))}>
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
@@ -414,5 +433,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
