@@ -61,8 +61,6 @@ export default function DashboardPage() {
   const [activeSosAlerts, setActiveSosAlerts] = useState<Alert[]>([]);
   const [districtFilter, setDistrictFilter] = useState<string>("All");
   
-  const helpRequests = userStatuses.filter(s => s.status === 'help');
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -71,16 +69,14 @@ export default function DashboardPage() {
     
     setLoading(true);
 
-    const alertsQuery = query(
-        collection(db, 'alerts'),
-        orderBy('timestamp', 'desc')
-    );
+    const alertsQuery = query(collection(db, 'alerts'), orderBy('timestamp', 'desc'));
 
     const unsubscribeAlerts = onSnapshot(alertsQuery, async (querySnapshot) => {
         const fetchedAlertsPromises: Promise<Alert>[] = querySnapshot.docs.map(async (docSnapshot) => {
             let alertData = docSnapshot.data() as Alert;
             
-            if (language !== 'en') {
+            // Only translate if the alert is not an SOS
+            if (language !== 'en' && !alertData.title.startsWith('SOS:')) {
                 try {
                     const translationRef = doc(db, 'alerts', docSnapshot.id, 'translations', language);
                     const translationSnap = await getDoc(translationRef);
@@ -90,14 +86,19 @@ export default function DashboardPage() {
                         alertData.description = translationData.description;
                     }
                 } catch (e) {
-                    // This can happen if the translation subcollection isn't created yet, which is fine.
+                     // This can happen if the translation subcollection isn't created yet, which is fine.
                 }
             }
             return { id: docSnapshot.id, ...alertData };
         });
         
         const fetchedAlerts = await Promise.all(fetchedAlertsPromises);
-
+        
+        // Find the user's active SOS alerts to display in the top card.
+        const userSosAlerts = fetchedAlerts.filter(a => a.severity === 'Critical' && a.createdBy === user.uid && a.rescueStatus !== 'Completed');
+        setActiveSosAlerts(userSosAlerts);
+        
+        // The main alerts list is the complete, sorted list.
         const sortedAlerts = fetchedAlerts.sort((a, b) => {
             const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
             if (severityDiff !== 0) return severityDiff;
@@ -106,12 +107,8 @@ export default function DashboardPage() {
             return b.timestamp.toMillis() - b.timestamp.toMillis();
         });
         
-        // Find the user's active SOS alerts to display in the top card.
-        const userSosAlerts = sortedAlerts.filter(a => a.severity === 'Critical' && a.createdBy === user.uid && a.rescueStatus !== 'Completed');
-        setActiveSosAlerts(userSosAlerts);
-        
-        // Set the main alerts list to the complete, sorted list.
         setAlerts(sortedAlerts);
+        setError(null);
         setLoading(false);
     }, (err) => {
         console.error("Error fetching alerts:", err);
@@ -433,5 +430,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

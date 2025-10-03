@@ -93,11 +93,12 @@ export default function AdminAlertPage() {
     const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
         const fetchedAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert));
         
+        // Sort to show Critical and unacknowledged alerts first
         fetchedAlerts.sort((a, b) => {
           if (a.severity === 'Critical' && b.severity !== 'Critical') return -1;
           if (a.severity !== 'Critical' && b.severity === 'Critical') return 1;
-          if (a.acknowledged && !b.acknowledged) return 1;
           if (!a.acknowledged && b.acknowledged) return -1;
+          if (a.acknowledged && !b.acknowledged) return 1;
           if (a.timestamp && b.timestamp) return b.timestamp.toMillis() - a.timestamp.toMillis();
           return 0;
         });
@@ -164,7 +165,7 @@ export default function AdminAlertPage() {
             title: "Success!",
             description: "Alert has been created and sent successfully.",
         });
-        reset(); // Clear the form
+        reset();
     } catch (error) {
         toast({
             title: "Error",
@@ -377,10 +378,9 @@ export default function AdminAlertPage() {
                           <Select
                             onValueChange={(value) => {
                               const currentAreas = field.value || [];
-                              const newAreas = currentAreas.includes(value)
-                                ? currentAreas.filter((a) => a !== value)
-                                : [...currentAreas, value];
-                              setValue('affectedAreas', newAreas, { shouldValidate: true });
+                              if (!currentAreas.includes(value)) {
+                                setValue('affectedAreas', [...currentAreas, value], { shouldValidate: true });
+                              }
                             }}
                           >
                             <SelectTrigger>
@@ -443,7 +443,7 @@ export default function AdminAlertPage() {
                 <CardDescription>A list of all alerts that have been sent out, including SOS signals.</CardDescription>
             </CardHeader>
             <CardContent>
-                {alerts.length === 0 ? (
+                {alerts.length === 0 && !isLoading ? (
                     <div className="text-center text-muted-foreground p-8">No alerts have been sent yet.</div>
                 ) : (
                     <div className="max-h-[400px] overflow-y-auto">
@@ -574,5 +574,3 @@ export default function AdminAlertPage() {
     </div>
   );
 }
-
-    

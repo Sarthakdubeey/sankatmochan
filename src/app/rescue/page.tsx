@@ -173,7 +173,7 @@ export default function RescueDashboardPage() {
                                     <TableRow key={alert.id} className={!alert.acknowledged ? "bg-destructive/10" : ""}>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-2">
-                                                <User className="h-6 w-6" />
+                                                <User className="h-4 w-4" />
                                                 {alert.title.replace('SOS: Help request from ', '')}
                                             </div>
                                         </TableCell>
@@ -251,5 +251,3 @@ export default function RescueDashboardPage() {
     </div>
   );
 }
-
-    
