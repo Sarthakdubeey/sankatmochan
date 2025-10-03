@@ -73,7 +73,7 @@ export function useStatusUpdater() {
       await updateUserStatus({
         userId: user.uid,
         userName: user.displayName || 'Anonymous',
-        userAvatarUrl: user.photoURL || undefined,
+        userAvatarUrl: user.photoURL || null,
         status,
         location: locationGeoPoint,
         timestamp: serverTimestamp(),
