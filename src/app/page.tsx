@@ -103,7 +103,7 @@ export default function DashboardPage() {
             if (severityDiff !== 0) return severityDiff;
             if (!a.timestamp) return 1;
             if (!b.timestamp) return -1;
-            return b.timestamp.toMillis() - a.timestamp.toMillis();
+            return b.timestamp.toMillis() - b.timestamp.toMillis();
         });
         
         // Find the user's active SOS alerts to display in the top card.
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                 <Users className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold text-destructive">{loading ? <Skeleton className="h-8 w-12" /> : helpRequests.length}</div>
+                <div className="text-2xl font-bold text-destructive">{loading ? <Skeleton className="h-8 w-12" /> : alerts.filter(a => a.severity === 'Critical').length}</div>
                 <p className="text-xs text-muted-foreground">
                 {t('dashboard_help_requests_desc')}
                 </p>
@@ -402,12 +402,12 @@ export default function DashboardPage() {
                             ))}
                          </div>
                     )}
-                    {!loading && helpRequests.length === 0 && (
+                    {!loading && userStatuses.filter(s => s.status === 'help').length === 0 && (
                         <p className="text-sm text-muted-foreground text-center py-4">{t('dashboard_no_help_requests')}</p>
                     )}
-                    {!loading && helpRequests.length > 0 && (
+                    {!loading && userStatuses.filter(s => s.status === 'help').length > 0 && (
                         <ul className="space-y-4">
-                            {helpRequests.map(req => (
+                            {userStatuses.filter(s => s.status === 'help').map(req => (
                                 <li key={req.id} className="flex items-center gap-3">
                                     <Avatar>
                                         <AvatarImage src={req.userAvatarUrl} alt={req.userName} />
@@ -433,3 +433,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, Building, LifeBuoy, MapPin, User } from 'lucide-react';
+import { AlertTriangle, Building, LifeBuoy, MapPin, User, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { resources } from '@/lib/data';
@@ -47,7 +47,6 @@ export default function RescueDashboardPage() {
 
     setLoading(true);
 
-    // This query fetches ALL SOS alerts (severity: 'Critical')
     const sosAlertsQuery = query(
         collection(db, 'alerts'), 
         where('severity', '==', 'Critical'),
@@ -63,7 +62,6 @@ export default function RescueDashboardPage() {
         setLoading(false);
     });
 
-    // This query fetches ALL damage reports
     const damageReportQuery = query(
         collection(db, 'damage_reports'),
         orderBy('timestamp', 'desc')
@@ -83,21 +81,26 @@ export default function RescueDashboardPage() {
   }, [user, authLoading, router]);
 
   if (authLoading || loading) {
-    return <p>Loading...</p>;
+    return (
+        <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-10rem)]">
+            <Card className="p-8 text-center">
+                <Loader2 className="animate-spin h-10 w-10 mx-auto mb-4"/>
+                <p>Loading Rescue Dashboard...</p>
+            </Card>
+        </div>
+    );
   }
 
   if (!user) {
     return null;
   }
   
-  // Determine the map's center point based on available data
   const mapCenter = sosAlerts.length > 0 && sosAlerts[0].location
     ? [sosAlerts[0].location.latitude, sosAlerts[0].location.longitude] as [number, number]
     : damageReports.length > 0 && damageReports[0].location
     ? [damageReports[0].location.latitude, damageReports[0].location.longitude] as [number, number]
     : [28.6139, 77.2090] as [number, number];
     
-  // Transform SOS alerts into UserStatus objects for the map component
   const userStatusesFromSOS: UserStatus[] = sosAlerts.map(alert => ({
     id: alert.id,
     userId: alert.createdBy,
@@ -152,7 +155,7 @@ export default function RescueDashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Active SOS Requests</CardTitle>
-                    <CardDescription>All users who have signaled they need help.</CardDescription>
+                    <CardDescription>All users who have signaled they need help, sorted by most recent.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="max-h-[300px] overflow-y-auto">
@@ -167,7 +170,7 @@ export default function RescueDashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {sosAlerts.map(alert => (
-                                    <TableRow key={alert.id}>
+                                    <TableRow key={alert.id} className={!alert.acknowledged ? "bg-destructive/10" : ""}>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-2">
                                                 <User className="h-6 w-6" />

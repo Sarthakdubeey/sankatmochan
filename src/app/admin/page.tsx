@@ -138,7 +138,7 @@ export default function AdminAlertPage() {
   }, [user, loading, router, toast]);
   
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
         <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-10rem)]">
             <Card className="p-8 text-center">
@@ -443,9 +443,7 @@ export default function AdminAlertPage() {
                 <CardDescription>A list of all alerts that have been sent out, including SOS signals.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading ? (
-                    <p>Loading alerts...</p>
-                ) : alerts.length === 0 ? (
+                {alerts.length === 0 ? (
                     <div className="text-center text-muted-foreground p-8">No alerts have been sent yet.</div>
                 ) : (
                     <div className="max-h-[400px] overflow-y-auto">
@@ -509,9 +507,7 @@ export default function AdminAlertPage() {
                 <CardDescription>Breakdown of submitted damage reports by AI-assessed severity.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading ? (
-                    <p>Loading chart data...</p>
-                ) : damageSeverityData.length === 0 ? (
+                {damageReports.length === 0 ? (
                     <div className="text-center text-muted-foreground p-8">No damage reports have been submitted yet.</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={250}>
