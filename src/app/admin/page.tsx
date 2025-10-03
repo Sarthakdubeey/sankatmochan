@@ -45,7 +45,6 @@ const ResourceMap = dynamic(() => import('@/components/resource-map'), {
     loading: () => <Skeleton className="h-[400px] w-full rounded-lg" />
 });
 
-
 const alertFormSchema = z.object({
   title: z.string().min(5, { message: "Title must be at least 5 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
@@ -63,7 +62,6 @@ export default function AdminAlertPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [damageReports, setDamageReports] = useState<DamageReport[]>([]);
-  const [helpRequests, setHelpRequests] = useState<UserStatus[]>([]);
   const [resourceNeeds, setResourceNeeds] = useState<ResourceNeed[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,6 +77,8 @@ export default function AdminAlertPage() {
   });
   
   const selectedAreas = watch('affectedAreas');
+  
+  const helpRequests = alerts.filter(a => a.severity === 'Critical' && !a.acknowledged);
 
   useEffect(() => {
     if (loading) return;
@@ -92,6 +92,15 @@ export default function AdminAlertPage() {
     const alertsQuery = query(collection(db, 'alerts'), orderBy('timestamp', 'desc'));
     const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
         const fetchedAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert));
+        
+        // Sort to show Critical alerts first
+        fetchedAlerts.sort((a, b) => {
+          if (a.severity === 'Critical' && b.severity !== 'Critical') return -1;
+          if (a.severity !== 'Critical' && b.severity === 'Critical') return 1;
+          if (a.timestamp && b.timestamp) return b.timestamp.toMillis() - a.timestamp.toMillis();
+          return 0;
+        });
+
         setAlerts(fetchedAlerts);
         setIsLoading(false);
     }, (error) => {
@@ -109,18 +118,6 @@ export default function AdminAlertPage() {
         toast({ title: "Error", description: "Failed to fetch damage reports.", variant: "destructive" });
     });
     
-    const helpRequestQuery = query(
-        collection(db, 'user_status'), 
-        where('status', '==', 'help'),
-        orderBy('timestamp', 'desc')
-    );
-    const unsubscribeHelp = onSnapshot(helpRequestQuery, (snapshot) => {
-        const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserStatus));
-        setHelpRequests(requests);
-    }, (err) => {
-        console.error("Error fetching help requests:", err);
-    });
-
     const resourceNeedsQuery = query(collection(db, 'resource_needs'), where('fulfilled', '==', false), orderBy('timestamp', 'desc'));
     const unsubscribeResourceNeeds = onSnapshot(resourceNeedsQuery, (snapshot) => {
         const needs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceNeed));
@@ -134,7 +131,6 @@ export default function AdminAlertPage() {
     return () => {
         unsubscribeAlerts();
         unsubscribeReports();
-        unsubscribeHelp();
         unsubscribeResourceNeeds();
     };
 
@@ -428,7 +424,7 @@ export default function AdminAlertPage() {
                 <CardContent>
                      <ResourceMap 
                         resources={resources as Resource[]} 
-                        userStatuses={helpRequests} 
+                        userStatuses={[]} 
                         resourceNeeds={resourceNeeds} 
                         damageReports={damageReports}
                         center={mapCenter}
@@ -472,7 +468,15 @@ export default function AdminAlertPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell><Badge variant={alert.severity === 'Critical' || alert.severity === 'High' ? 'destructive' : 'secondary'}>{alert.severity}</Badge></TableCell>
-                                        <TableCell><div className="flex flex-wrap gap-1 max-w-xs">{alert.affectedAreas.map(area => <Badge key={area} variant="outline">{area}</Badge>)}</div></TableCell>
+                                        <TableCell>
+                                           <div className="flex flex-wrap gap-1 max-w-xs">
+                                                {alert.location ? (
+                                                    <Badge variant="outline">{`Lat: ${alert.location.latitude.toFixed(4)}, Lon: ${alert.location.longitude.toFixed(4)}`}</Badge>
+                                                ) : (
+                                                    alert.affectedAreas.map(area => <Badge key={area} variant="outline">{area}</Badge>)
+                                                )}
+                                            </div>
+                                        </TableCell>
                                         <TableCell>{alert.timestamp ? format(alert.timestamp.toDate(), 'PPP p') : 'Just now'}</TableCell>
                                         <TableCell className="text-right space-x-1">
                                             {alert.severity === 'Critical' && !alert.acknowledged && (
@@ -532,40 +536,6 @@ export default function AdminAlertPage() {
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <Card>
             <CardHeader>
-                <CardTitle>Active SOS Requests</CardTitle>
-                <CardDescription>Users who have signaled they need help.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="max-h-[300px] overflow-y-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>Time</TableHead>
-                                <TableHead>Location (Lat, Lon)</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {helpRequests.map(req => (
-                                <TableRow key={req.id}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4" />
-                                            {req.userName}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{req.timestamp ? formatDistanceToNow(req.timestamp.toDate(), {addSuffix: true}) : 'N/A'}</TableCell>
-                                    <TableCell>{req.location ? `${req.location.latitude.toFixed(4)}, ${req.location.longitude.toFixed(4)}` : 'Not Available'}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-                {helpRequests.length === 0 && <p className="text-center text-muted-foreground py-4">No active SOS requests.</p>}
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader>
                 <CardTitle>Active Resource Requests</CardTitle>
                 <CardDescription>Unfulfilled requests for essential items from the community.</CardDescription>
             </CardHeader>
@@ -593,7 +563,7 @@ export default function AdminAlertPage() {
                                         <Badge variant={req.urgency === 'High' ? 'destructive' : 'secondary'}>{req.urgency}</Badge>
                                     </TableCell>
                                     <TableCell>{req.contactInfo}</TableCell>
-                                     <TableCell>{req.location ? `${req.location.latitude.toFixed(4)}, ${req.location.longitude.toFixed(4)}` : 'N/A'}</TableCell>
+                                    <TableCell>{req.location ? `${req.location.latitude.toFixed(4)}, ${req.location.longitude.toFixed(4)}` : 'N/A'}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

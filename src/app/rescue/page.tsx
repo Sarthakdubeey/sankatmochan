@@ -47,6 +47,7 @@ export default function RescueDashboardPage() {
 
     setLoading(true);
 
+    // This query fetches ALL SOS alerts (severity: 'Critical')
     const sosAlertsQuery = query(
         collection(db, 'alerts'), 
         where('severity', '==', 'Critical'),
@@ -62,6 +63,7 @@ export default function RescueDashboardPage() {
         setLoading(false);
     });
 
+    // This query fetches ALL damage reports
     const damageReportQuery = query(
         collection(db, 'damage_reports'),
         orderBy('timestamp', 'desc')
@@ -88,12 +90,14 @@ export default function RescueDashboardPage() {
     return null;
   }
   
+  // Determine the map's center point based on available data
   const mapCenter = sosAlerts.length > 0 && sosAlerts[0].location
     ? [sosAlerts[0].location.latitude, sosAlerts[0].location.longitude] as [number, number]
     : damageReports.length > 0 && damageReports[0].location
     ? [damageReports[0].location.latitude, damageReports[0].location.longitude] as [number, number]
     : [28.6139, 77.2090] as [number, number];
     
+  // Transform SOS alerts into UserStatus objects for the map component
   const userStatusesFromSOS: UserStatus[] = sosAlerts.map(alert => ({
     id: alert.id,
     userId: alert.createdBy,
@@ -148,7 +152,7 @@ export default function RescueDashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Active SOS Requests</CardTitle>
-                    <CardDescription>Users who have signaled they need help.</CardDescription>
+                    <CardDescription>All users who have signaled they need help.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="max-h-[300px] overflow-y-auto">
@@ -171,7 +175,7 @@ export default function RescueDashboardPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>{alert.timestamp ? formatDistanceToNow(alert.timestamp.toDate(), {addSuffix: true}) : 'N/A'}</TableCell>
-                                        <TableCell>{alert.affectedAreas.join(', ')}</TableCell>
+                                        <TableCell>{alert.location ? `${alert.location.latitude.toFixed(4)}, ${alert.location.longitude.toFixed(4)}` : alert.affectedAreas.join(', ')}</TableCell>
                                         <TableCell><Badge variant={alert.acknowledged ? 'secondary' : 'destructive'}>{alert.acknowledged ? alert.rescueStatus || 'Acknowledged' : 'New'}</Badge></TableCell>
                                     </TableRow>
                                 ))}
@@ -198,7 +202,7 @@ export default function RescueDashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {damageReports.slice(0,5).map(report => (
+                                {damageReports.map(report => (
                                     <TableRow key={report.id}>
                                         <TableCell>
                                             <Image src={report.imageUrl} alt="Damage report" width={64} height={48} className="rounded-md object-cover aspect-video"/>
@@ -226,7 +230,7 @@ export default function RescueDashboardPage() {
                         <MapPin />
                         Operations Map
                     </CardTitle>
-                     <CardDescription>Live view of SOS requests and damage reports.</CardDescription>
+                     <CardDescription>Live view of all SOS requests and damage reports.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <ResourceMap 
@@ -244,3 +248,5 @@ export default function RescueDashboardPage() {
     </div>
   );
 }
+
+    
