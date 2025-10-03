@@ -41,6 +41,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { resources } from '@/lib/data';
 import { errorEmitter } from '@/lib/firebase/error-emitter';
 import { FirestorePermissionError } from '@/lib/firebase/errors';
+import { ADMIN_USER_IDS } from '@/lib/config';
 
 
 const ResourceMap = dynamic(() => import('@/components/resource-map'), { 
@@ -67,6 +68,7 @@ export default function AdminAlertPage() {
   const [damageReports, setDamageReports] = useState<DamageReport[]>([]);
   const [resourceNeeds, setResourceNeeds] = useState<ResourceNeed[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<AlertFormValues>({
     resolver: zodResolver(alertFormSchema),
@@ -90,6 +92,17 @@ export default function AdminAlertPage() {
       return;
     }
     
+    // Authorization check
+    if (!ADMIN_USER_IDS.includes(user.uid)) {
+        toast({
+            variant: 'destructive',
+            title: 'Unauthorized',
+            description: 'You do not have permission to access this page.',
+        });
+        router.push('/');
+        return;
+    }
+    setIsAuthorized(true);
     setIsLoading(true);
 
     const alertsQuery = query(collection(db, 'alerts'), orderBy('timestamp', 'desc'));
@@ -129,8 +142,9 @@ export default function AdminAlertPage() {
     
     const resourceNeedsQuery = query(collection(db, 'resource_needs'), orderBy('timestamp', 'desc'));
     const unsubscribeResourceNeeds = onSnapshot(resourceNeedsQuery, (snapshot) => {
-        const needs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceNeed));
-        setResourceNeeds(needs.filter(need => !need.fulfilled));
+        const needs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceNeed))
+                                     .filter(need => !need.fulfilled);
+        setResourceNeeds(needs);
     },
     async (error) => {
       const permissionError = new FirestorePermissionError({ path: 'resource_needs', operation: 'list' });
@@ -148,7 +162,7 @@ export default function AdminAlertPage() {
   }, [user, loading, router, toast]);
   
 
-  if (loading || isLoading) {
+  if (loading || isLoading || !isAuthorized) {
     return (
         <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-10rem)]">
             <Card className="p-8 text-center">
@@ -587,3 +601,4 @@ export default function AdminAlertPage() {
     
 
     
+
