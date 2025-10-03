@@ -103,7 +103,7 @@ export default function DashboardPage() {
             if (severityDiff !== 0) return severityDiff;
             if (!a.timestamp) return 1;
             if (!b.timestamp) return -1;
-            return b.timestamp.toMillis() - b.timestamp.toMillis();
+            return b.timestamp.toMillis() - a.timestamp.toMillis();
         });
         
         setAlerts(sortedAlerts);
@@ -111,7 +111,7 @@ export default function DashboardPage() {
         setLoading(false);
     },
     async (err) => {
-        const permissionError = new FirestorePermissionError({ path: alertsQuery.path, operation: 'list' });
+        const permissionError = new FirestorePermissionError({ path: 'alerts', operation: 'list' });
         errorEmitter.emit('permission-error', permissionError);
         setError(t('error_failed_to_load_alerts'));
         setLoading(false);
@@ -124,6 +124,10 @@ export default function DashboardPage() {
             statuses.push({ id: doc.id, ...doc.data() } as UserStatus);
         });
         setUserStatuses(statuses);
+    },
+    async (err) => {
+        const permissionError = new FirestorePermissionError({ path: 'user_status', operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
     });
 
     const resourceNeedsQuery = query(collection(db, 'resource_needs'), where('fulfilled', '==', false));
@@ -135,14 +139,18 @@ export default function DashboardPage() {
         setResourceNeeds(needs);
     },
     async (err) => {
-        const permissionError = new FirestorePermissionError({ path: resourceNeedsQuery.path, operation: 'list' });
+        const permissionError = new FirestorePermissionError({ path: 'resource_needs', operation: 'list' });
         errorEmitter.emit('permission-error', permissionError);
     });
     
-    const reportsQuery = query(collection(db, 'damage_reports'));
+    const reportsQuery = query(collection(db, 'damage_reports'), orderBy('timestamp', 'desc'));
     const unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
         const fetchedReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DamageReport));
         setDamageReports(fetchedReports);
+    },
+    async (err) => {
+        const permissionError = new FirestorePermissionError({ path: 'damage_reports', operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
     });
 
 

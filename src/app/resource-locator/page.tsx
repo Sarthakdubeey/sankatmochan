@@ -54,6 +54,10 @@ export default function ResourceLocatorPage() {
                 statuses.push({ id: doc.id, ...doc.data() } as UserStatus);
             });
             setUserStatuses(statuses);
+        },
+        async (err) => {
+            const permissionError = new FirestorePermissionError({ path: 'user_status', operation: 'list' });
+            errorEmitter.emit('permission-error', permissionError);
         });
 
         const resourceNeedsQuery = query(collection(db, 'resource_needs'), where('fulfilled', '==', false));
@@ -65,7 +69,7 @@ export default function ResourceLocatorPage() {
             setResourceNeeds(needs);
         },
         async (err) => {
-            const permissionError = new FirestorePermissionError({ path: resourceNeedsQuery.path, operation: 'list' });
+            const permissionError = new FirestorePermissionError({ path: 'resource_needs', operation: 'list' });
             errorEmitter.emit('permission-error', permissionError);
         });
 

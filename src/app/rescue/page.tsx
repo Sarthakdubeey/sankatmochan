@@ -62,7 +62,7 @@ export default function RescueDashboardPage() {
         setLoading(false);
     },
     async (err) => {
-        const permissionError = new FirestorePermissionError({ path: sosAlertsQuery.path, operation: 'list' });
+        const permissionError = new FirestorePermissionError({ path: 'alerts', operation: 'list' });
         errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
     });
@@ -77,7 +77,7 @@ export default function RescueDashboardPage() {
         setDamageReports(reports);
     },
     async (err) => {
-        const permissionError = new FirestorePermissionError({ path: damageReportQuery.path, operation: 'list' });
+        const permissionError = new FirestorePermissionError({ path: 'damage_reports', operation: 'list' });
         errorEmitter.emit('permission-error', permissionError);
     });
 
