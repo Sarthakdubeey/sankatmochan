@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/hooks/use-auth';
 import { LanguageProvider } from '@/hooks/use-language';
 import Chatbot from '@/components/chatbot';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 
 // Leaflet CSS for react-leaflet
@@ -38,6 +39,7 @@ export default function RootLayout({
         <AuthProvider>
           <LanguageProvider>
             <SidebarProvider>
+                <FirebaseErrorListener />
                 <div className="flex min-h-screen w-full">
                   <SidebarNav />
                   <div className="flex flex-1 flex-col">

@@ -14,6 +14,9 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import app, { db } from './firebase';
 import type { UserProfile } from '@/lib/types';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
+
 
 export const auth = getAuth(app);
 
@@ -47,7 +50,18 @@ export const createUserProfileDocument = async (user: User, additionalData: { di
             phoneNumber,
             createdAt,
         };
-        await setDoc(userRef, userProfile);
+        
+        try {
+            await setDoc(userRef, userProfile);
+        } catch (error: any) {
+            const permissionError = new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'create',
+                requestResourceData: userProfile,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            throw error;
+        }
 
     } catch (error) {
       console.error("Error creating user profile", error);

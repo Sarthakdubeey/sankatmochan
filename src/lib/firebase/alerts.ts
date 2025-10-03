@@ -2,33 +2,46 @@
 import { db } from './firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import type { Alert } from '@/lib/types';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 // Service class for handling Firestore operations for alerts
 export class AlertService {
   private static alertsCollection = collection(db, 'alerts');
 
   // Create a new alert in Firestore
-  static async createAlert(alertData: Omit<Alert, 'id' | 'timestamp'>): Promise<string> {
+  static async createAlert(alertData: Omit<Alert, 'id' | 'timestamp'>): Promise<string | undefined> {
+    const data = {
+      ...alertData,
+      timestamp: serverTimestamp(),
+    };
     try {
-      const docRef = await addDoc(this.alertsCollection, {
-        ...alertData,
-        timestamp: serverTimestamp(),
-      });
+      const docRef = await addDoc(this.alertsCollection, data);
       return docRef.id;
-    } catch (error) {
-      console.error("Error creating alert: ", error);
-      throw new Error("Failed to create alert.");
+    } catch (error: any) {
+      const permissionError = new FirestorePermissionError({
+        path: this.alertsCollection.path,
+        operation: 'create',
+        requestResourceData: data,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw error;
     }
   }
   
   // Update an existing alert
   static async updateAlert(alertId: string, dataToUpdate: Partial<Alert>): Promise<void> {
+    const alertDocRef = doc(db, 'alerts', alertId);
     try {
-        const alertDocRef = doc(db, 'alerts', alertId);
         await updateDoc(alertDocRef, dataToUpdate);
-    } catch (error) {
-        console.error("Error updating alert: ", error);
-        throw new Error("Failed to update alert.");
+    } catch (error: any) {
+        const permissionError = new FirestorePermissionError({
+            path: alertDocRef.path,
+            operation: 'update',
+            requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw error;
     }
   }
 
@@ -50,28 +63,38 @@ export class AlertService {
 
   // Delete an alert from Firestore
   static async deleteAlert(alertId: string): Promise<void> {
+    const alertDocRef = doc(db, 'alerts', alertId);
     try {
-      const alertDocRef = doc(db, 'alerts', alertId);
       await deleteDoc(alertDocRef);
-    } catch (error) {
-      console.error("Error deleting alert: ", error);
-      throw new Error("Failed to delete alert.");
+    } catch (error: any) {
+      const permissionError = new FirestorePermissionError({
+        path: alertDocRef.path,
+        operation: 'delete',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw error;
     }
   }
 
   // Acknowledge an SOS alert and dispatch a team
   static async acknowledgeSosAlert(alertId: string): Promise<void> {
-    try {
-      const alertDocRef = doc(db, 'alerts', alertId);
-      await updateDoc(alertDocRef, {
+    const alertDocRef = doc(db, 'alerts', alertId);
+    const updateData = {
         acknowledged: true,
         rescueStatus: 'Dispatched',
         rescueTeam: 'Bravo Team',
         eta: 'approx. 30 minutes',
-      });
-    } catch (error) {
-      console.error("Error acknowledging alert: ", error);
-      throw new Error("Failed to acknowledge alert.");
+      };
+    try {
+      await updateDoc(alertDocRef, updateData);
+    } catch (error: any) {
+        const permissionError = new FirestorePermissionError({
+            path: alertDocRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw error;
     }
   }
 }

@@ -1,8 +1,11 @@
+
 import { db, storage } from './firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import type { MissingPerson } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 export class MissingPersonService {
   private static reportsCollection = collection(db, 'missing_persons');
@@ -21,16 +24,22 @@ export class MissingPersonService {
   }
 
   // Create a new missing person report
-  static async createReport(reportData: Omit<MissingPerson, 'id' | 'timestamp'>): Promise<string> {
+  static async createReport(reportData: Omit<MissingPerson, 'id' | 'timestamp'>): Promise<string | undefined> {
+    const data = {
+      ...reportData,
+      timestamp: serverTimestamp(),
+    };
     try {
-      const docRef = await addDoc(this.reportsCollection, {
-        ...reportData,
-        timestamp: serverTimestamp(),
-      });
+      const docRef = await addDoc(this.reportsCollection, data);
       return docRef.id;
-    } catch (error) {
-      console.error("Error creating missing person report: ", error);
-      throw new Error("Failed to create report.");
+    } catch (error: any) {
+      const permissionError = new FirestorePermissionError({
+        path: this.reportsCollection.path,
+        operation: 'create',
+        requestResourceData: data,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw error;
     }
   }
 

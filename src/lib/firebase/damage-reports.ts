@@ -1,22 +1,31 @@
+
 import { db } from './firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore';
 import type { DamageReport } from '@/lib/types';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 // Service class for handling Firestore operations for damage reports
 export class DamageReportService {
   private static reportsCollection = collection(db, 'damage_reports');
 
   // Create a new damage report in Firestore
-  static async createDamageReport(reportData: Omit<DamageReport, 'id' | 'timestamp'>): Promise<string> {
+  static async createDamageReport(reportData: Omit<DamageReport, 'id' | 'timestamp'>): Promise<string | undefined> {
+    const data = {
+      ...reportData,
+      timestamp: serverTimestamp(),
+    };
     try {
-      const docRef = await addDoc(this.reportsCollection, {
-        ...reportData,
-        timestamp: serverTimestamp(),
-      });
+      const docRef = await addDoc(this.reportsCollection, data);
       return docRef.id;
-    } catch (error) {
-      console.error("Error creating damage report: ", error);
-      throw new Error("Failed to create damage report.");
+    } catch (error: any) {
+      const permissionError = new FirestorePermissionError({
+        path: this.reportsCollection.path,
+        operation: 'create',
+        requestResourceData: data,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw error;
     }
   }
 

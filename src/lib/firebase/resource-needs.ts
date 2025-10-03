@@ -1,19 +1,27 @@
+
 import { db } from './firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
 import type { ResourceNeed } from '@/lib/types';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 // Service class for handling Firestore operations for resource needs
 export class ResourceNeedService {
   private static needsCollection = collection(db, 'resource_needs');
 
   // Create a new resource need in Firestore
-  static async createResourceNeed(needData: Omit<ResourceNeed, 'id'>): Promise<string> {
+  static async createResourceNeed(needData: Omit<ResourceNeed, 'id'>): Promise<string | undefined> {
     try {
       const docRef = await addDoc(this.needsCollection, needData);
       return docRef.id;
-    } catch (error) {
-      console.error("Error creating resource need: ", error);
-      throw new Error("Failed to create resource need.");
+    } catch (error: any) {
+      const permissionError = new FirestorePermissionError({
+        path: this.needsCollection.path,
+        operation: 'create',
+        requestResourceData: needData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw error;
     }
   }
 
@@ -35,14 +43,18 @@ export class ResourceNeedService {
 
   // Mark a resource need as fulfilled
   static async fulfillResourceNeed(needId: string): Promise<void> {
+    const needDocRef = doc(db, 'resource_needs', needId);
+    const updateData = { fulfilled: true };
     try {
-        const needDocRef = doc(db, 'resource_needs', needId);
-        await updateDoc(needDocRef, {
-            fulfilled: true
+        await updateDoc(needDocRef, updateData);
+    } catch (error: any) {
+        const permissionError = new FirestorePermissionError({
+            path: needDocRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
         });
-    } catch (error) {
-        console.error("Error fulfilling resource need: ", error);
-        throw new Error("Failed to fulfill resource need.");
+        errorEmitter.emit('permission-error', permissionError);
+        throw error;
     }
   }
 }

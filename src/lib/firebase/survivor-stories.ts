@@ -4,6 +4,8 @@ import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit } f
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import type { SurvivorStory } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 export class SurvivorStoryService {
   private static storiesCollection = collection(db, 'survivor_stories');
@@ -22,16 +24,22 @@ export class SurvivorStoryService {
   }
 
   // Create a new survivor story
-  static async createStory(storyData: Omit<SurvivorStory, 'id' | 'timestamp'>): Promise<string> {
+  static async createStory(storyData: Omit<SurvivorStory, 'id' | 'timestamp'>): Promise<string | undefined> {
+    const data = {
+      ...storyData,
+      timestamp: serverTimestamp(),
+    };
     try {
-      const docRef = await addDoc(this.storiesCollection, {
-        ...storyData,
-        timestamp: serverTimestamp(),
-      });
+      const docRef = await addDoc(this.storiesCollection, data);
       return docRef.id;
-    } catch (error) {
-      console.error("Error creating survivor story: ", error);
-      throw new Error("Failed to create story.");
+    } catch (error: any) {
+      const permissionError = new FirestorePermissionError({
+        path: this.storiesCollection.path,
+        operation: 'create',
+        requestResourceData: data,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw error;
     }
   }
 
