@@ -58,7 +58,7 @@ export default function DashboardPage() {
   const [damageReports, setDamageReports] = useState<DamageReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSosAlerts, setActiveSosAlerts] = useState<Alert[]>([]);
+  const [activeSosAlert, setActiveSosAlert] = useState<Alert | null>(null);
   const [districtFilter, setDistrictFilter] = useState<string>("All");
   
   useEffect(() => {
@@ -75,7 +75,6 @@ export default function DashboardPage() {
         const fetchedAlertsPromises: Promise<Alert>[] = querySnapshot.docs.map(async (docSnapshot) => {
             let alertData = docSnapshot.data() as Alert;
             
-            // Only translate if the alert is not an SOS
             if (language !== 'en' && !alertData.title.startsWith('SOS:')) {
                 try {
                     const translationRef = doc(db, 'alerts', docSnapshot.id, 'translations', language);
@@ -94,11 +93,9 @@ export default function DashboardPage() {
         
         const fetchedAlerts = await Promise.all(fetchedAlertsPromises);
         
-        // Find the user's active SOS alerts to display in the top card.
-        const userSosAlerts = fetchedAlerts.filter(a => a.severity === 'Critical' && a.createdBy === user.uid && a.rescueStatus !== 'Completed');
-        setActiveSosAlerts(userSosAlerts);
+        const userSosAlert = fetchedAlerts.find(a => a.severity === 'Critical' && a.createdBy === user.uid && a.rescueStatus !== 'Completed') || null;
+        setActiveSosAlert(userSosAlert);
         
-        // The main alerts list is the complete, sorted list.
         const sortedAlerts = fetchedAlerts.sort((a, b) => {
             const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
             if (severityDiff !== 0) return severityDiff;
@@ -157,7 +154,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-        {user && activeSosAlerts.length > 0 && (
+        {user && activeSosAlert && (
              <Card className="bg-destructive/10 border-destructive">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3">
@@ -165,28 +162,26 @@ export default function DashboardPage() {
                         {t('dashboard_sos_status_title')}
                     </CardTitle>
                     <CardDescription className="text-destructive/80">
-                        {activeSosAlerts[0].acknowledged 
+                        {activeSosAlert.acknowledged 
                             ? t('dashboard_sos_status_dispatched_desc')
                             : t('dashboard_sos_status_awaiting_desc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {activeSosAlerts.map(activeSosAlert => (
-                        <div key={activeSosAlert.id} className="p-3 border-t border-destructive/20 first:border-t-0">
-                             <p className="font-semibold text-lg">
-                                {t('dashboard_sos_status_acknowledged').replace('{status}', activeSosAlert.rescueStatus || t('dashboard_sos_status_awaiting'))}
-                            </p>
-                             <p className="text-sm text-muted-foreground">
-                                Requested {activeSosAlert.timestamp ? formatDistanceToNow(activeSosAlert.timestamp.toDate(), {addSuffix: true}) : 'just now'}
-                            </p>
-                            {activeSosAlert.rescueTeam && activeSosAlert.eta && (
-                                <div className="mt-2">
-                                     <p className="text-sm font-medium">{t('dashboard_sos_rescue_team_title').replace('{team}', activeSosAlert.rescueTeam)}</p>
-                                     <p className="text-sm text-muted-foreground">{t('dashboard_sos_rescue_team_eta').replace('{eta}', activeSosAlert.eta)}</p>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                    <div key={activeSosAlert.id} className="p-3">
+                         <p className="font-semibold text-lg">
+                            {t('dashboard_sos_status_acknowledged').replace('{status}', activeSosAlert.rescueStatus || t('dashboard_sos_status_awaiting'))}
+                        </p>
+                         <p className="text-sm text-muted-foreground">
+                            Requested {activeSosAlert.timestamp ? formatDistanceToNow(activeSosAlert.timestamp.toDate(), {addSuffix: true}) : 'just now'}
+                        </p>
+                        {activeSosAlert.rescueTeam && activeSosAlert.eta && (
+                            <div className="mt-2">
+                                 <p className="text-sm font-medium">{t('dashboard_sos_rescue_team_title').replace('{team}', activeSosAlert.rescueTeam)}</p>
+                                 <p className="text-sm text-muted-foreground">{t('dashboard_sos_rescue_team_eta').replace('{eta}', activeSosAlert.eta)}</p>
+                            </div>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         )}
@@ -430,3 +425,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
