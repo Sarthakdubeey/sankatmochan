@@ -52,12 +52,17 @@ export default function RescueDashboardPage() {
 
     const sosAlertsQuery = query(
         collection(db, 'alerts'), 
-        where('severity', '==', 'Critical'),
-        orderBy('timestamp', 'desc')
+        where('severity', '==', 'Critical')
     );
 
     const unsubscribeSosAlerts = onSnapshot(sosAlertsQuery, (snapshot) => {
         const alerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert));
+        // Sort by timestamp client-side
+        alerts.sort((a, b) => {
+            if (!a.timestamp) return 1;
+            if (!b.timestamp) return -1;
+            return b.timestamp.toMillis() - a.timestamp.toMillis();
+        });
         setSosAlerts(alerts);
         setLoading(false);
     },
@@ -258,5 +263,7 @@ export default function RescueDashboardPage() {
     </div>
   );
 }
+
+    
 
     
