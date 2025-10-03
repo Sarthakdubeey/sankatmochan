@@ -120,10 +120,10 @@ export default function AdminAlertPage() {
         toast({ title: "Error", description: "Failed to fetch damage reports.", variant: "destructive" });
     });
     
-    const resourceNeedsQuery = query(collection(db, 'resource_needs'), where('fulfilled', '==', false), orderBy('timestamp', 'desc'));
+    const resourceNeedsQuery = query(collection(db, 'resource_needs'), orderBy('timestamp', 'desc'));
     const unsubscribeResourceNeeds = onSnapshot(resourceNeedsQuery, (snapshot) => {
         const needs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceNeed));
-        setResourceNeeds(needs);
+        setResourceNeeds(needs.filter(need => !need.fulfilled));
     }, (error) => {
         console.error("Error fetching resource needs: ", error);
         toast({ title: "Error", description: "Failed to fetch resource needs.", variant: "destructive" });
