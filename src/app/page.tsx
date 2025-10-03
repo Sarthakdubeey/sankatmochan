@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Alert, UserStatus, ResourceNeed } from '@/lib/types';
+import type { Alert, UserStatus, ResourceNeed, DamageReport } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -55,7 +55,7 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [userStatuses, setUserStatuses] = useState<UserStatus[]>([]);
   const [resourceNeeds, setResourceNeeds] = useState<ResourceNeed[]>([]);
-  const [damageReports, setDamageReports] = useState<any[]>([]); // Using any to avoid type issues with firebase data
+  const [damageReports, setDamageReports] = useState<DamageReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSosAlerts, setActiveSosAlerts] = useState<Alert[]>([]);
@@ -105,11 +105,11 @@ export default function DashboardPage() {
             return b.timestamp.toMillis() - a.timestamp.toMillis();
         });
         
-        // Find the user's active SOS alerts to display in the top card
+        // Find the user's active SOS alerts to display in the top card, but don't filter the main list
         const userSosAlerts = sortedAlerts.filter(a => a.severity === 'Critical' && a.createdBy === user.uid && a.rescueStatus !== 'Completed');
         setActiveSosAlerts(userSosAlerts);
         
-        // Set ALL alerts for the main feed
+        // Set ALL alerts for the main feed, ensuring no alerts are filtered out
         setAlerts(sortedAlerts);
         setLoading(false);
     }, (err) => {
@@ -138,7 +138,7 @@ export default function DashboardPage() {
     
     const reportsQuery = query(collection(db, 'damage_reports'));
     const unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
-        const fetchedReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const fetchedReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DamageReport));
         setDamageReports(fetchedReports);
     });
 
