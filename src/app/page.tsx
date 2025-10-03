@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -105,11 +104,11 @@ export default function DashboardPage() {
             return b.timestamp.toMillis() - a.timestamp.toMillis();
         });
         
-        // Find the user's active SOS alerts to display in the top card, but don't filter the main list
+        // Find the user's active SOS alerts to display in the top card.
         const userSosAlerts = sortedAlerts.filter(a => a.severity === 'Critical' && a.createdBy === user.uid && a.rescueStatus !== 'Completed');
         setActiveSosAlerts(userSosAlerts);
         
-        // Set ALL alerts for the main feed, ensuring no alerts are filtered out
+        // Set the main alerts list to the complete, sorted list.
         setAlerts(sortedAlerts);
         setLoading(false);
     }, (err) => {
