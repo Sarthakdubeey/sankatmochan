@@ -1,0 +1,89 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Admins have special privileges (defined by a custom claim)
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+    
+    // Users can only read/write their own data
+    function isOwner(userId) {
+      return request.auth.token.uid == userId;
+    }
+
+    // Users Collection
+    // Users can read/write their own profile.
+    // Admins can read any profile.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      allow list: if isAdmin();
+    }
+    
+    // Alerts Collection
+    // - Any authenticated user can create an alert (for SOS).
+    // - Users can read/update their own alerts.
+    // - Admins can read/update/delete any alert.
+    match /alerts/{alertId} {
+      allow create: if request.auth != null;
+      allow read, update: if isOwner(resource.data.createdBy) || isAdmin();
+      allow delete: if isAdmin();
+
+      // Translations subcollection follows parent alert rules
+      match /translations/{lang} {
+        allow read, write: if isOwner(get(/databases/$(database)/documents/alerts/$(alertId)).data.createdBy) || isAdmin();
+      }
+    }
+
+    // User Status Collection (for the live map)
+    // Users can only create/update their own status.
+    // All authenticated users can read statuses for the map.
+    match /user_status/{userId} {
+      allow create, update: if isOwner(userId);
+      allow read: if request.auth != null;
+    }
+    
+    // Damage Reports Collection
+    // Users can create reports.
+    // Only the owner or an admin can read/update/delete.
+    match /damage_reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // Feedback Collection
+    // Users can submit feedback.
+    // Only admins can view feedback.
+    match /feedback/{feedbackId} {
+        allow create: if request.auth != null;
+        allow read, list: if isAdmin();
+    }
+    
+    // Missing Persons Collection
+    // Authenticated users can create reports.
+    // All authenticated users can read reports to help find people.
+    // Only the original reporter or an admin can update/delete.
+    match /missing_persons/{personId} {
+        allow create, read: if request.auth != null;
+        allow update, delete: if isOwner(resource.data.reportedBy) || isAdmin();
+    }
+    
+    // Resource Needs Collection
+    // Authenticated users can create and read needs.
+    // Only the creator or an admin can update/delete a need.
+    match /resource_needs/{needId} {
+        allow create, read: if request.auth != null;
+        allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // Survivor Stories Collection
+    // Authenticated users can create and read stories.
+    // Only the creator or an admin can update/delete their story.
+    match /survivor_stories/{storyId} {
+        allow create, read: if request.auth != null;
+        allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+  }
+}
