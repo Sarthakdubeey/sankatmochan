@@ -3,79 +3,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check if the user is an admin.
-    // Make sure to replace the placeholder in src/lib/config.ts with your actual admin UID.
+    
     function isAdmin() {
-      // IMPORTANT: Update src/lib/config.ts with your admin user ID(s)
-      let adminUIDs = ['REPLACE_WITH_YOUR_ADMIN_USER_ID'];
-      return request.auth.uid in adminUIDs;
+      return request.auth.uid in [
+        'zgCBWGAWP3TvCkjdABmixpJCI2u2',
+      ];
     }
-
-    // Users can read/write their own profile, but only read others.
+    
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Any authenticated user can create an alert (SOS).
-    // All authenticated users can read all alerts for the dashboards.
-    // Only admins can update (acknowledge) or delete alerts.
+    
     match /alerts/{alertId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if isAdmin();
-      
-      // Translations subcollection
-      match /translations/{lang} {
-        allow read: if request.auth != null;
-        // Translations are written by backend Cloud Function, not clients
-        allow write: if false;
-      }
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && isAdmin();
     }
 
-    // Any authenticated user can create a damage report.
-    // Users can only read their own reports. Admins can read all.
-    match /damage_reports/{reportId} {
-      allow create: if request.auth != null;
-      allow read: if request.auth.uid == resource.data.userId || isAdmin();
-      allow write: if request.auth.uid == resource.data.userId;
-    }
-    
-    // Any authenticated user can create a resource request.
-    // All users can read all requests (for the community map).
-    // Only the creator or an admin can mark a request as fulfilled (update).
-    match /resource_needs/{needId} {
-        allow read, create: if request.auth != null;
-        allow update: if request.auth.uid == resource.data.userId || isAdmin();
-    }
-    
-    // Users can update their own status.
-    // All users can read all statuses for the live map.
     match /user_status/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth.uid == userId;
-    }
-
-    // Any authenticated user can submit feedback.
-    // Only admins can read feedback.
-    match /feedback/{feedbackId} {
-      allow create: if request.auth != null;
-      allow read: if isAdmin();
-    }
-
-    // Any authenticated user can report a missing person.
-    // All users can read the reports to help find people.
-    // Only the user who reported it or an admin can update/delete.
-    match /missing_persons/{personId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.reportedBy || isAdmin();
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Any authenticated user can create/read survivor stories.
-    // Only the author or an admin can update/delete their own story.
+    match /damage_reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read: if (request.auth != null && request.auth.uid == resource.data.userId) || isAdmin();
+    }
+    
+    match /resource_needs/{needId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update: if (request.auth != null && request.auth.uid == resource.data.userId) || isAdmin();
+    }
+
+    match /missing_persons/{reportId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+    
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null;
+    }
+
     match /survivor_stories/{storyId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.userId || isAdmin();
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
