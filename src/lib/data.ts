@@ -1,5 +1,5 @@
 
-import type { StatusUpdate, Resource, EmergencyContact, AlertSource } from "./types";
+import type { StatusUpdate, Resource, EmergencyContact, AlertSource, GovernmentAdvisory } from "./types";
 import type { Alert } from './types';
 
 
@@ -107,7 +107,7 @@ export const emergencyContacts: EmergencyContact[] = [
         name: 'Fire Department',
         description: 'For fire-related emergencies and rescue.',
         phone: '101',
-        icon: "Utensils"
+        icon: "FireExtinguisher"
     }
 ];
 
@@ -140,3 +140,51 @@ export const indianDistricts: string[] = [
 
 export const alertTypes: Array<Alert['type']> = ["Cyclone", "Flood", "Earthquake", "Fire", "Other"];
 export const alertSeverities: Array<Alert['severity']> = ["Low", "Medium", "High", "Critical"];
+
+export const advisories: GovernmentAdvisory[] = [
+  {
+    id: 1,
+    title: "Cyclone Watch for East Coast",
+    agency: "India Meteorological Department (IMD)",
+    date: new Date(Date.now() - 2 * 3600 * 1000).toISOString().split('T')[0], // 2 hours ago
+    summary: "A low-pressure area over the Bay of Bengal is likely to intensify into a cyclonic storm. Fishermen are advised not to venture into the sea.",
+    type: "Cyclone",
+    severity: "Watch"
+  },
+  {
+    id: 2,
+    title: "Evacuation Orders for Low-Lying Areas",
+    agency: "National Disaster Management Authority (NDMA)",
+    date: new Date(Date.now() - 6 * 3600 * 1000).toISOString().split('T')[0], // 6 hours ago
+    summary: "Due to rising river levels, residents in specified flood-prone areas are ordered to evacuate to designated shelters immediately. Follow instructions from local authorities.",
+    type: "Flood",
+    severity: "Warning"
+  },
+  {
+    id: 3,
+    title: "Heavy Rainfall Warning",
+    agency: "India Meteorological Department (IMD)",
+    date: new Date(Date.now() - 24 * 3600 * 1000).toISOString().split('T')[0], // 1 day ago
+    summary: "Widespread heavy to very heavy rainfall expected over Kerala and coastal Karnataka for the next 48 hours. Risk of localized flooding and landslides.",
+    type: "Flood",
+    severity: "Warning"
+  },
+  {
+    id: 4,
+    title: "Earthquake Preparedness Advisory",
+    agency: "National Disaster Management Authority (NDMA)",
+    date: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString().split('T')[0], // 3 days ago
+    summary: "This is a reminder to all citizens in seismic zones 4 and 5 to review their family emergency plans. Ensure you have an emergency kit ready.",
+    type: "Earthquake",
+    severity: "Advisory"
+  },
+  {
+    id: 5,
+    title: "Thunderstorm and Lightning Alert",
+    agency: "India Meteorological Department (IMD)",
+    date: new Date().toISOString().split('T')[0], // Today
+    summary: "Thunderstorms with lightning and gusty winds are expected in parts of Uttar Pradesh and Bihar this afternoon and evening. Stay indoors and avoid taking shelter under trees.",
+    type: "Weather",
+    severity: "Watch"
+  }
+];

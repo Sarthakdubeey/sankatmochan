@@ -21,6 +21,16 @@ export type Alert = {
   eta?: string;
 };
 
+export type GovernmentAdvisory = {
+  id: number;
+  title: string;
+  agency: "National Disaster Management Authority (NDMA)" | "India Meteorological Department (IMD)";
+  date: string;
+  summary: string;
+  type: "Cyclone" | "Flood" | "Earthquake" | "Weather" | "Other";
+  severity: "Warning" | "Watch" | "Advisory";
+}
+
 export type StatusUpdate = {
   id: string;
   userName: string;
