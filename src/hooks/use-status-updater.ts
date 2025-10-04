@@ -55,29 +55,39 @@ export function useStatusUpdater() {
         const locationString = locationCoords
           ? `at location: ${locationCoords.latitude.toFixed(4)}, ${locationCoords.longitude.toFixed(4)}`
           : 'at an unknown location';
-
-        await AlertService.createAlert({
+        
+        const alertPayload: any = {
           title: `SOS: Help request from ${user.displayName || 'a user'}`,
           description: `A user has requested immediate assistance ${locationString}.`,
           severity: 'Critical',
           type: 'Other',
           affectedAreas: locationCoords ? [`Lat: ${locationCoords.latitude.toFixed(4)}, Lon: ${locationCoords.longitude.toFixed(4)}`] : ['Location not available'],
           createdBy: user.uid,
-          location: locationGeoPoint,
           acknowledged: false,
           rescueStatus: null,
-        });
+        };
+
+        if (locationGeoPoint) {
+            alertPayload.location = locationGeoPoint;
+        }
+
+        await AlertService.createAlert(alertPayload);
       }
 
-      // Always update the user's general status in the 'user_status' collection for the live map
-      await updateUserStatus({
+      const statusPayload: any = {
         userId: user.uid,
         userName: user.displayName || 'Anonymous',
         userAvatarUrl: user.photoURL || null,
         status,
-        location: locationGeoPoint,
         timestamp: serverTimestamp(),
-      });
+      };
+      
+      if (locationGeoPoint) {
+        statusPayload.location = locationGeoPoint;
+      }
+
+      // Always update the user's general status in the 'user_status' collection for the live map
+      await updateUserStatus(statusPayload);
 
       toast({
         title: 'Status Updated',
