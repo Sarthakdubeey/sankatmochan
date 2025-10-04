@@ -9,7 +9,9 @@ import {
   User,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import app, { db } from './firebase';
@@ -72,9 +74,21 @@ export const createUserProfileDocument = async (user: User, additionalData: { di
 
 
 export const signInWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    await createUserProfileDocument(result.user);
+    await signInWithRedirect(auth, googleProvider);
 };
+
+export const handleRedirectResult = async () => {
+    try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+            await createUserProfileDocument(result.user);
+            return result.user;
+        }
+    } catch (error) {
+        console.error("Error during sign-in redirect:", error);
+    }
+    return null;
+}
 
 export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);

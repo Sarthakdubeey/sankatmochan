@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, signInWithGoogle, signOut as firebaseSignOut } from '@/lib/firebase/auth';
+import { auth, signInWithGoogle, signOut as firebaseSignOut, handleRedirectResult } from '@/lib/firebase/auth';
 
 
 type AuthContextType = {
@@ -25,6 +25,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+    });
+    
+    // Check for redirect result on initial load
+    handleRedirectResult().then((redirectUser) => {
+        if (redirectUser) {
+            setUser(redirectUser);
+        }
+        setLoading(false);
     });
 
     return () => unsubscribe();
