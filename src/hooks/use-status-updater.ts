@@ -63,7 +63,7 @@ export function useStatusUpdater() {
           type: 'Other',
           affectedAreas: locationCoords ? [`Lat: ${locationCoords.latitude.toFixed(4)}, Lon: ${locationCoords.longitude.toFixed(4)}`] : ['Location not available'],
           createdBy: user.uid,
-          location: locationGeoPoint || undefined,
+          location: locationGeoPoint,
           acknowledged: false,
           rescueStatus: null,
         });
