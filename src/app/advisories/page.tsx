@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
-import type { Notification, ApiStatus } from '@/app/types/notification';
+import type { ApiStatus } from '@/app/types/notification';
 import { Button } from '@/components/ui/button';
 import {
   Bell,
@@ -12,35 +12,14 @@ import {
   Volume2,
   VolumeX,
   CloudSun,
-  TriangleAlert,
-  CloudRain,
-  Wind,
-  Thermometer,
-  Zap,
-  Waves,
-  Database,
-  Clock,
   Plug,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/advisories/Header';
+import { NotificationItem } from '@/components/advisories/NotificationItem';
 
-const notificationIcons: { [key: string]: React.ElementType } = {
-  default: CloudRain,
-  'fa-cloud-showers-heavy': CloudRain,
-  'fa-wind': Wind,
-  'fa-temperature-high': Thermometer,
-  'fa-bolt': Zap,
-  'fa-water': Waves,
-};
-
-const typeStyles: { [key: string]: string } = {
-  critical: 'border-red-500 bg-red-500/15',
-  warning: 'border-yellow-500 bg-yellow-500/15',
-  info: 'border-blue-500 bg-blue-500/15',
-};
 
 const apiStatuses: ApiStatus[] = [
     {
@@ -86,13 +65,6 @@ export default function AdvisoriesPage() {
     }
   };
   
-  const getIconForType = (type: string) => {
-    switch(type) {
-      case 'critical': return TriangleAlert;
-      case 'warning': return TriangleAlert;
-      default: return Bell;
-    }
-  }
 
   return (
     <div className="min-h-full w-full bg-gradient-to-br from-[#1a2a6c] via-[#b21f1f] to-[#fdbb2d] p-4 text-white -m-8">
@@ -117,32 +89,13 @@ export default function AdvisoriesPage() {
               </Button>
             </div>
           </div>
-          <div className="max-h-[500px] overflow-y-auto pr-2">
+          <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4">
             {isLoading ? (
-              [...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full bg-white/10 mb-4" />)
+              [...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 w-full bg-white/10 mb-4" />)
             ) : notifications.length > 0 ? (
-              notifications.map((notification) => {
-                const Icon = getIconForType(notification.type);
-                return (
-                  <div
-                    key={notification.id}
-                    className={cn('p-4 mb-4 rounded-lg flex items-start gap-4 border-l-4 transition-all hover:bg-white/20', typeStyles[notification.type])}
-                  >
-                    <div className="text-2xl pt-1">
-                      <Icon />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm opacity-80 mb-1 flex items-center gap-2">
-                        <Database size={14} /> {notification.source}
-                      </div>
-                      <div className="text-base font-medium mb-2">{notification.message}</div>
-                      <div className="text-xs opacity-70 flex items-center gap-2">
-                        <Clock size={12} /> {notification.timestamp}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+              notifications.map((notification) => (
+                <NotificationItem key={notification.id} notification={notification} />
+              ))
             ) : (
                 <div className="text-center py-16 opacity-80">
                     <Bell size={48} className="mx-auto mb-4"/>
