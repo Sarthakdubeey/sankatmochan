@@ -57,8 +57,8 @@ export default function Home() {
                     
                     // Check for and specifically track the user's most recent SOS alert.
                     if (alert.severity === 'Critical' && alert.createdBy === user.uid) {
-                        // If we haven't found a user SOS yet, this is it.
-                        if (!foundUserSos) {
+                        // If we haven't found a user SOS yet, or this one is newer, this is it.
+                        if (!foundUserSos || (alert.timestamp && foundUserSos.timestamp && alert.timestamp.toMillis() > foundUserSos.timestamp.toMillis())) {
                             foundUserSos = alert;
                         }
                     } 
@@ -84,11 +84,18 @@ export default function Home() {
             const needsQuery = query(
                 collection(db, 'resource_needs'), 
                 where('fulfilled', '==', false),
-                orderBy('timestamp', 'desc'),
-                limit(5)
+                limit(20)
             );
             const unsubscribeNeeds = onSnapshot(needsQuery, (snapshot) => {
-                setResourceNeeds(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceNeed)));
+                const needs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceNeed));
+                // Sort client-side
+                needs.sort((a, b) => {
+                    if (a.timestamp && b.timestamp) {
+                        return b.timestamp.toMillis() - a.timestamp.toMillis();
+                    }
+                    return 0;
+                });
+                setResourceNeeds(needs.slice(0, 5));
             }, (err) => {
                 console.error(err);
                 setError(t('error_failed_to_load_community_requests'));
@@ -257,5 +264,3 @@ export default function Home() {
         </div>
     );
 }
-
-    
