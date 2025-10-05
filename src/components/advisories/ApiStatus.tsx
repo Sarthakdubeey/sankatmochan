@@ -5,32 +5,42 @@ import { useState, useEffect } from 'react';
 import { ApiStatus as ApiStatusType } from '@/app/types/notification';
 import { Plug, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const mockApiStatus: ApiStatusType[] = [
+const initialApiStatus: ApiStatusType[] = [
   {
     name: 'India Meteorological Department',
     status: 'connected',
-    lastUpdate: new Date().toISOString(),
+    lastUpdate: '',
     description: 'Official weather forecasts and warnings for India'
   },
   {
     name: 'National Disaster Management Authority',
     status: 'connected',
-    lastUpdate: new Date().toISOString(),
+    lastUpdate: '',
     description: 'Natural disaster alerts and emergency management'
   },
   {
     name: 'Google Weather',
     status: 'connected',
-    lastUpdate: new Date().toISOString(),
+    lastUpdate: '',
     description: 'Global weather data and severe weather alerts'
   }
 ];
 
 export const ApiStatus = () => {
-  const [apiStatus, setApiStatus] = useState<ApiStatusType[]>(mockApiStatus);
+  const [apiStatus, setApiStatus] = useState<ApiStatusType[]>(initialApiStatus);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+    
+    // Set initial state with current time on client
+    setApiStatus(prev => prev.map(api => ({
+      ...api,
+      lastUpdate: new Date().toISOString(),
+    })));
+
     // Simulate API status changes
     const interval = setInterval(() => {
       setApiStatus(prev => prev.map(api => ({
@@ -81,7 +91,7 @@ export const ApiStatus = () => {
                 {api.status.charAt(0).toUpperCase() + api.status.slice(1)}
               </span>
               <span className="opacity-70">
-                Updated: {new Date(api.lastUpdate).toLocaleTimeString()}
+                Updated: {isClient ? new Date(api.lastUpdate).toLocaleTimeString() : <Skeleton className="h-4 w-20 inline-block bg-white/20" />}
               </span>
             </div>
           </div>
