@@ -96,13 +96,6 @@ export default function LearningHubPage() {
   const finalScoreMessage = getScoreMessage(score);
 
   const handleNextQuestion = () => {
-    // Check answer and update score
-    if (selectedAnswer === currentQuestion.correctAnswer) {
-      if(!showResult) { // Only add score if it hasn't been shown
-          setScore(prevScore => prevScore + 1);
-      }
-    }
-    
     setShowResult(false);
     setSelectedAnswer(null);
 
@@ -115,6 +108,12 @@ export default function LearningHubPage() {
   
   const handleCheckAnswer = () => {
     if(!selectedAnswer) return;
+    
+    // Only update score on the first check for this question
+    if (!showResult && selectedAnswer === currentQuestion.correctAnswer) {
+      setScore(prevScore => prevScore + 1);
+    }
+    
     setShowResult(true);
   }
 
