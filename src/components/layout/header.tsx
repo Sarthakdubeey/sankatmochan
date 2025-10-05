@@ -38,6 +38,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { useVoiceRecognition } from "@/hooks/use-voice-recognition";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import Logo from "./logo";
 
 
 const navItems = [
@@ -154,7 +155,7 @@ export default function Header() {
           <SheetContent side="left" className="w-full max-w-xs p-0">
              <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
                 <div className="flex items-center gap-2.5 p-4 border-b border-sidebar-border">
-                  <icons.ShieldAlert className="h-7 w-7 text-primary" />
+                  <Logo className="h-8 w-8" />
                   <span className="text-xl font-bold tracking-tight">
                     {t('app_title')}
                   </span>

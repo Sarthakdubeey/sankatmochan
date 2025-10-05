@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useLanguage } from "@/hooks/use-language";
+import Logo from "./logo";
 
 const navItems = [
   { href: "/", label: "nav_dashboard", icon: "LayoutDashboard" },
@@ -51,7 +52,7 @@ export default function SidebarNav() {
         <div className="flex h-full max-h-screen flex-col gap-2">
             <div className="flex h-16 items-center border-b px-4">
                 <Link href="/" className="flex items-center gap-2.5 font-semibold">
-                    <icons.ShieldAlert className="h-7 w-7 text-primary" />
+                    <Logo className="h-8 w-8" />
                     <span className="text-xl font-bold tracking-tight text-sidebar-foreground">
                         {t('app_title')}
                     </span>

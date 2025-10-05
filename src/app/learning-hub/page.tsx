@@ -199,8 +199,8 @@ export default function LearningHubPage() {
         <CardContent className="space-y-6">
             {quizFinished ? (
                 <div className="text-center space-y-4 p-4 rounded-lg bg-background">
-                     <Alert className="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300">
-                        <finalScoreMessage.icon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                     <Alert className="border-accent/50 bg-accent/10 text-accent-foreground">
+                        <finalScoreMessage.icon className="h-6 w-6 text-accent" />
                         <AlertTitle className="text-2xl font-bold">Quiz Finished!</AlertTitle>
                         <AlertDescription className="text-lg">
                             Your final score is: <span className="font-bold text-primary">{score} / {quizQuestions.length}</span>
