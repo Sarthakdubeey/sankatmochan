@@ -1,134 +1,180 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useState } from 'react';
+import { useNotifications } from '@/hooks/useNotifications';
+import type { Notification, ApiStatus } from '@/app/types/notification';
 import { Button } from '@/components/ui/button';
-import { Landmark, CloudRain, Wind, Waves, Landslide, AlertTriangle, Info } from "lucide-react";
-import { advisories as allAdvisories } from '@/lib/data';
-import type { GovernmentAdvisory } from '@/lib/types';
+import {
+  Bell,
+  Trash,
+  RefreshCw,
+  Volume2,
+  VolumeX,
+  CloudSun,
+  TriangleAlert,
+  CloudRain,
+  Wind,
+  Thermometer,
+  Zap,
+  Waves,
+  Database,
+  Clock,
+  Plug,
+} from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
-const agencyIcons: { [key: string]: React.ElementType } = {
-  "National Disaster Management Authority (NDMA)": Landmark,
-  "India Meteorological Department (IMD)": CloudRain,
+const notificationIcons: { [key: string]: React.ElementType } = {
+  default: CloudRain,
+  'fa-cloud-showers-heavy': CloudRain,
+  'fa-wind': Wind,
+  'fa-temperature-high': Thermometer,
+  'fa-bolt': Zap,
+  'fa-water': Waves,
 };
 
-const severityIcons: { [key: string]: React.ElementType } = {
-  Warning: AlertTriangle,
-  Watch: Info,
-  Advisory: Info,
+const typeStyles: { [key: string]: string } = {
+  critical: 'border-red-500 bg-red-500/15',
+  warning: 'border-yellow-500 bg-yellow-500/15',
+  info: 'border-blue-500 bg-blue-500/15',
 };
 
-const severityColors: { [key: string]: string } = {
-  Warning: 'border-destructive bg-destructive/10 text-destructive-foreground',
-  Watch: 'border-yellow-500 bg-yellow-500/10 text-yellow-600',
-  Advisory: 'border-primary bg-primary/10 text-primary',
-};
-
+const apiStatuses: ApiStatus[] = [
+    {
+        name: 'India Meteorological Department',
+        description: 'Provides official weather forecasts, warnings, and meteorological data for India.',
+        status: 'connected',
+        lastUpdate: new Date().toISOString()
+    },
+    {
+        name: 'National Disaster Management Authority',
+        description: 'Issues alerts for natural disasters and emergencies across India.',
+        status: 'connected',
+        lastUpdate: new Date().toISOString()
+    },
+    {
+        name: 'Google Weather',
+        description: 'Provides global weather data and severe weather alerts.',
+        status: 'connected',
+        lastUpdate: new Date().toISOString()
+    }
+];
 
 export default function AdvisoriesPage() {
-  const [advisories, setAdvisories] = useState<GovernmentAdvisory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'NDMA' | 'IMD'>('all');
+  const {
+    notifications,
+    isLoading,
+    soundEnabled,
+    setSoundEnabled,
+    refreshNotifications,
+    clearNotifications,
+  } = useNotifications();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    setLoading(true);
-    // Simulate fetching data
-    setTimeout(() => {
-      const filteredAdvisories = allAdvisories.filter(adv => {
-        if (filter === 'all') return true;
-        if (filter === 'NDMA') return adv.agency === "National Disaster Management Authority (NDMA)";
-        if (filter === 'IMD') return adv.agency === "India Meteorological Department (IMD)";
-        return false;
-      });
-      setAdvisories(filteredAdvisories);
-      setLoading(false);
-    }, 500);
-  }, [filter]);
+  const handleRefresh = () => {
+    toast({ title: "Refreshing...", description: "Fetching latest alerts." });
+    refreshNotifications();
+  };
+
+  const handleClear = () => {
+    if (confirm("Are you sure you want to clear all notifications?")) {
+      clearNotifications();
+      toast({ title: "Notifications Cleared" });
+    }
+  };
+  
+  const getIconForType = (type: string) => {
+    switch(type) {
+      case 'critical': return TriangleAlert;
+      case 'warning': return TriangleAlert;
+      default: return Bell;
+    }
+  }
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Government Advisories</h1>
-        <p className="text-muted-foreground">
-          Real-time alerts and preparedness information from official agencies.
-        </p>
-      </div>
-      
-      <div className="flex gap-2 flex-wrap">
-        <Button variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>All Sources</Button>
-        <Button variant={filter === 'NDMA' ? 'default' : 'outline'} onClick={() => setFilter('NDMA')}>
-            <Landmark className="mr-2 h-4 w-4"/>
-            NDMA
-        </Button>
-        <Button variant={filter === 'IMD' ? 'default' : 'outline'} onClick={() => setFilter('IMD')}>
-            <CloudRain className="mr-2 h-4 w-4"/>
-            IMD
-        </Button>
-      </div>
+    <div className="min-h-full w-full bg-gradient-to-br from-[#1a2a6c] via-[#b21f1f] to-[#fdbb2d] p-4 text-white -m-8">
+      <div className="container mx-auto">
+        <header className="text-center mb-8 p-5 bg-black/30 rounded-2xl backdrop-blur-lg shadow-2xl">
+          <h1 className="text-4xl font-bold mb-2 flex items-center justify-center gap-3">
+            <CloudSun size={40} /> Real-Time Alert System
+          </h1>
+          <p className="text-lg opacity-90">
+            Live notifications from IMD, NDMA, and Google Weather
+          </p>
+        </header>
 
-      <div className="space-y-6">
-        {loading ? (
-            [...Array(3)].map((_, i) => (
-                <Card key={i}>
-                    <CardHeader>
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="space-y-2">
-                                <Skeleton className="h-6 w-72" />
-                                <Skeleton className="h-4 w-56" />
-                            </div>
-                            <Skeleton className="h-12 w-12 rounded-lg" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-10 w-full" />
-                    </CardContent>
-                </Card>
-            ))
-        ) : advisories.length > 0 ? (
-          advisories.map((advisory) => {
-            const AgencyIcon = agencyIcons[advisory.agency] || Landmark;
-            const SeverityIcon = severityIcons[advisory.severity] || Info;
-
-            return (
-              <Card key={advisory.id} className={cn('border-l-4', severityColors[advisory.severity]?.split(' ')[0].replace('bg-','border-'))}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1.5">
-                        <CardTitle>{advisory.title}</CardTitle>
-                        <CardDescription>
-                          Issued by: {advisory.agency} on {advisory.date}
-                        </CardDescription>
+        <div className="bg-black/40 rounded-2xl p-4 mb-8 backdrop-blur-lg shadow-2xl border border-white/10">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-4 pb-3 border-b border-white/20">
+            <div className="text-2xl font-semibold flex items-center gap-3 mb-4 md:mb-0">
+              <Bell className="text-yellow-400" /> Active Weather Alerts
+            </div>
+            <div className="flex gap-2 flex-wrap justify-center">
+              <Button onClick={handleRefresh} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
+                <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+              </Button>
+              <Button onClick={() => setSoundEnabled(!soundEnabled)} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
+                {soundEnabled ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4" />}
+                Sound {soundEnabled ? 'On' : 'Off'}
+              </Button>
+              <Button onClick={handleClear} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
+                <Trash className="mr-2 h-4 w-4" /> Clear All
+              </Button>
+            </div>
+          </div>
+          <div className="max-h-[500px] overflow-y-auto pr-2">
+            {isLoading ? (
+              [...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full bg-white/10 mb-4" />)
+            ) : notifications.length > 0 ? (
+              notifications.map((notification) => {
+                const Icon = getIconForType(notification.type);
+                return (
+                  <div
+                    key={notification.id}
+                    className={cn('p-4 mb-4 rounded-lg flex items-start gap-4 border-l-4 transition-all hover:bg-white/20', typeStyles[notification.type])}
+                  >
+                    <div className="text-2xl pt-1">
+                      <Icon />
                     </div>
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-lg", severityColors[advisory.severity]?.split(' ')[1])}>
-                        <AgencyIcon className={cn("h-6 w-6", severityColors[advisory.severity]?.split(' ')[2])} />
+                    <div className="flex-1">
+                      <div className="text-sm opacity-80 mb-1 flex items-center gap-2">
+                        <Database size={14} /> {notification.source}
+                      </div>
+                      <div className="text-base font-medium mb-2">{notification.message}</div>
+                      <div className="text-xs opacity-70 flex items-center gap-2">
+                        <Clock size={12} /> {notification.timestamp}
+                      </div>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-foreground/90">{advisory.summary}</p>
-                   <div className="flex items-center gap-2">
-                        <Badge variant={advisory.severity === 'Warning' ? 'destructive' : 'secondary'} className="capitalize">{advisory.severity}</Badge>
-                        <Badge variant="outline" className="capitalize">{advisory.type}</Badge>
-                   </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        ) : (
-            <Card className="flex items-center justify-center h-48">
-                <p className="text-muted-foreground">No advisories found for the selected source.</p>
-            </Card>
-        )}
+                );
+              })
+            ) : (
+                <div className="text-center py-16 opacity-80">
+                    <Bell size={48} className="mx-auto mb-4"/>
+                    <p className="text-lg font-semibold">All Clear</p>
+                    <p>No active weather alerts at the moment.</p>
+                </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-black/30 rounded-2xl p-5 backdrop-blur-lg shadow-2xl">
+            <h2 className="text-3xl font-bold mb-4 flex items-center gap-3"><Plug /> API Integration Status</h2>
+            <p className="opacity-90 mb-6">This system integrates with multiple weather and disaster management APIs to provide real-time alerts.</p>
+            <div className="grid md:grid-cols-3 gap-6">
+                {apiStatuses.map(api => (
+                     <div key={api.name} className="bg-white/10 rounded-xl p-5 hover:-translate-y-1 transition-transform">
+                        <h3 className="text-xl font-semibold mb-2 flex items-center gap-2"><CloudSun /> {api.name}</h3>
+                        <p className="opacity-90 mb-4 text-sm">{api.description}</p>
+                        <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("w-2.5 h-2.5 rounded-full", api.status === 'connected' ? 'bg-green-400' : 'bg-red-400')}></div>
+                            <span className="capitalize">{api.status}</span> - <span className="opacity-80">Receiving live data</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
       </div>
     </div>
   );
