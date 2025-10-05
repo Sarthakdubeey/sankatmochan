@@ -25,6 +25,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Header } from '@/components/advisories/Header';
 
 const notificationIcons: { [key: string]: React.ElementType } = {
   default: CloudRain,
@@ -96,14 +97,7 @@ export default function AdvisoriesPage() {
   return (
     <div className="min-h-full w-full bg-gradient-to-br from-[#1a2a6c] via-[#b21f1f] to-[#fdbb2d] p-4 text-white -m-8">
       <div className="container mx-auto">
-        <header className="text-center mb-8 p-5 bg-black/30 rounded-2xl backdrop-blur-lg shadow-2xl">
-          <h1 className="text-4xl font-bold mb-2 flex items-center justify-center gap-3">
-            <CloudSun size={40} /> Real-Time Alert System
-          </h1>
-          <p className="text-lg opacity-90">
-            Live notifications from IMD, NDMA, and Google Weather
-          </p>
-        </header>
+        <Header />
 
         <div className="bg-black/40 rounded-2xl p-4 mb-8 backdrop-blur-lg shadow-2xl border border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center mb-4 pb-3 border-b border-white/20">
