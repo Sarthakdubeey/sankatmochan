@@ -271,7 +271,7 @@ export default function DamageAssessmentPage() {
       )}
 
       {analysisResult && (
-        <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileCheck2/> Assessment Results</CardTitle>
@@ -298,7 +298,7 @@ export default function DamageAssessmentPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><ShieldCheck/> Government Scheme Information</CardTitle>
-                    <CardDescription>Based on the AI assessment, you may be eligible for the following schemes. This is not a guarantee of eligibility and is for informational purposes only.</CardDescription>
+                    <CardDescription>Based on the AI assessment, you may be eligible for the following schemes.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {relevantSchemes.length > 0 ? relevantSchemes.map(scheme => (
@@ -319,7 +319,7 @@ export default function DamageAssessmentPage() {
                     )}
                 </CardContent>
             </Card>
-        </>
+        </div>
       )}
 
     </div>
