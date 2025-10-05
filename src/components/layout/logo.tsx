@@ -4,24 +4,38 @@ export default function Logo({ className }: { className?: string }) {
   return (
     <svg
       className={cn("text-primary", className)}
-      viewBox="0 0 24 24"
+      viewBox="0 0 140 100"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
       xmlns="http://www.w3.org/2000/svg"
     >
+      {/* Text behind the flag */}
+      <text
+        x="68"
+        y="85"
+        fontFamily="'PT Sans', sans-serif"
+        fontSize="18"
+        fontWeight="bold"
+        fill="hsl(var(--sidebar-foreground))"
+        textAnchor="middle"
+        className="opacity-50"
+      >
+        Sankat Mochan
+      </text>
+
+      {/* Flag pole */}
       <path
-        d="M4 22V4"
+        d="M20 90V10"
         stroke="hsl(var(--muted-foreground))"
-        strokeWidth="1.5"
+        strokeWidth="4"
+        strokeLinecap="round"
       />
+      
+      {/* Orange Flag */}
       <path
-        d="M4 4H18C18.5523 4 19 4.44772 19 5V13C19 13.5523 18.5523 14 18 14H4"
+        d="M22 15 H 120 V 65 H 22 Z"
         fill="hsl(var(--accent))"
         stroke="hsl(var(--accent))"
-        strokeWidth="1.5"
+        strokeWidth="2"
       />
     </svg>
   );
