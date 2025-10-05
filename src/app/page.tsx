@@ -41,11 +41,11 @@ export default function Home() {
             setLoading(true);
 
             // Listener for all high-priority alerts (excluding user's own SOS)
+            // Fetch by timestamp and filter client-side to avoid needing a composite index
             const alertsQuery = query(
                 collection(db, 'alerts'),
-                where('severity', 'in', ['High', 'Critical']),
                 orderBy('timestamp', 'desc'),
-                limit(10)
+                limit(20) // Fetch more to have enough to filter from
             );
             
             const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
@@ -54,16 +54,19 @@ export default function Home() {
 
                 snapshot.forEach(doc => {
                     const alert = { id: doc.id, ...doc.data() } as Alert;
-                    // Check if it's the current user's SOS alert
+                    
+                    // Separate the user's own SOS from the general high-priority alerts
                     if (alert.severity === 'Critical' && alert.createdBy === user.uid) {
                         foundUserSos = alert;
-                    } else {
+                    } 
+                    // Filter for other high-priority alerts
+                    else if (alert.severity === 'High' || alert.severity === 'Critical') {
                         fetchedAlerts.push(alert);
                     }
                 });
 
-                setAlerts(fetchedAlerts.slice(0, 5)); // Take top 5 non-user alerts
-                setUserSosAlert(foundUserSos);
+                setAlerts(fetchedAlerts.slice(0, 5)); // Take top 5 high-priority non-user alerts
+                setUserSosAlert(foundUserSos); // Set or update the user's SOS alert specifically
                 setError(null);
                 setLoading(false);
             }, (err) => {
@@ -74,7 +77,7 @@ export default function Home() {
                 setLoading(false);
             });
             
-            // Listener for user's specific SOS to ensure it's always captured
+            // This listener for the user's SOS is still useful for immediate updates if the above listener misses it.
             const userSosQuery = query(
                 collection(db, 'alerts'),
                 where('createdBy', '==', user.uid),
@@ -89,6 +92,7 @@ export default function Home() {
                     setUserSosAlert(sosAlert);
                  } else {
                     // This case handles when an acknowledged SOS is deleted
+                    // Only set to null if it was previously set, to avoid flicker
                     if (userSosAlert) setUserSosAlert(null);
                  }
             });
@@ -272,5 +276,3 @@ export default function Home() {
         </div>
     );
 }
-
-    
