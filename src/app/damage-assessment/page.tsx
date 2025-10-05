@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -15,13 +16,42 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, X, Bot, Percent, FileCheck2 } from 'lucide-react';
+import { Loader2, Upload, X, Bot, Percent, FileCheck2, ShieldCheck, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import { assessDamage } from '@/ai/flows/assess-damage-flow';
 import type { AssessDamageOutput } from '@/ai/flows/assess-damage-flow';
 import { GeoPoint, serverTimestamp } from 'firebase/firestore';
 import { DamageReportService } from '@/lib/firebase/damage-reports';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
+
+const getInsuranceSchemes = (severity: AssessDamageOutput['severity']) => {
+    const baseSchemes = [
+        {
+            name: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+            description: "Crop insurance for farmers against natural calamities.",
+            eligibility: "Farmers (including sharecroppers and tenant farmers) growing notified crops.",
+            link: "https://pmfby.gov.in/",
+            applicableSeverities: ['Minor', 'Moderate', 'Severe', 'Destroyed']
+        },
+        {
+            name: "Restructured Weather Based Crop Insurance Scheme (RWBCIS)",
+            description: "Insurance for farmers against adverse weather incidences.",
+            eligibility: "Farmers in areas where the scheme is implemented.",
+            link: "https://agri-insurance.gov.in/rwbcis.aspx",
+            applicableSeverities: ['Minor', 'Moderate', 'Severe', 'Destroyed']
+        },
+         {
+            name: "State Disaster Response Fund (SDRF)",
+            description: "Immediate relief for victims of natural disasters, including housing damage.",
+            eligibility: "Varies by state. Based on damage assessment by local authorities.",
+            link: "#",
+            applicableSeverities: ['Moderate', 'Severe', 'Destroyed']
+        },
+    ];
+
+    return baseSchemes.filter(scheme => scheme.applicableSeverities.includes(severity));
+}
 
 export default function DamageAssessmentPage() {
   const { user, loading: authLoading } = useAuth();
@@ -161,13 +191,15 @@ export default function DamageAssessmentPage() {
   if (authLoading) {
       return <p>Loading...</p>
   }
+  
+  const relevantSchemes = analysisResult ? getInsuranceSchemes(analysisResult.severity) : [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">AI Damage Assessment</h1>
         <p className="text-muted-foreground mt-2">
-          Upload an image of structural damage to get an AI-powered assessment.
+          Upload an image of structural damage to get an AI-powered assessment and relevant insurance information.
         </p>
       </div>
 
@@ -231,28 +263,55 @@ export default function DamageAssessmentPage() {
       )}
 
       {analysisResult && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><FileCheck2/> Assessment Results</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Severity</Label>
-                <p className="text-2xl font-bold text-primary">{analysisResult.severity}</p>
-             </div>
-             <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Confidence</Label>
-                <div className="flex items-center gap-2">
-                    <Percent className="h-5 w-5 text-muted-foreground"/>
-                    <p className="text-xl font-semibold">{analysisResult.confidenceScore.toFixed(2)}%</p>
+        <>
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><FileCheck2/> Assessment Results</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div>
+                    <Label className="text-xs font-semibold text-muted-foreground">Severity</Label>
+                    <p className="text-2xl font-bold text-primary">{analysisResult.severity}</p>
                 </div>
-             </div>
-             <div>
-                <Label className="text-xs font-semibold text-muted-foreground">AI Reasoning</Label>
-                <p className="text-sm text-foreground/90 bg-muted/50 p-3 rounded-md border">{analysisResult.reasoning}</p>
-             </div>
-          </CardContent>
-        </Card>
+                <div>
+                    <Label className="text-xs font-semibold text-muted-foreground">Confidence</Label>
+                    <div className="flex items-center gap-2">
+                        <Percent className="h-5 w-5 text-muted-foreground"/>
+                        <p className="text-xl font-semibold">{analysisResult.confidenceScore.toFixed(2)}%</p>
+                    </div>
+                </div>
+                <div>
+                    <Label className="text-xs font-semibold text-muted-foreground">AI Reasoning</Label>
+                    <p className="text-sm text-foreground/90 bg-muted/50 p-3 rounded-md border">{analysisResult.reasoning}</p>
+                </div>
+            </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ShieldCheck/> Government Scheme Information</CardTitle>
+                    <CardDescription>Based on the AI assessment, you may be eligible for the following schemes. This is not a guarantee of eligibility.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {relevantSchemes.length > 0 ? relevantSchemes.map(scheme => (
+                        <div key={scheme.name} className="p-4 border rounded-lg bg-background">
+                            <h3 className="font-bold">{scheme.name}</h3>
+                            <p className="text-sm text-muted-foreground mt-1">{scheme.description}</p>
+                            <p className="text-sm mt-2"><span className="font-semibold">Eligibility:</span> {scheme.eligibility}</p>
+                            {scheme.link !== "#" && (
+                                <Button asChild variant="link" className="px-0 h-auto mt-2">
+                                    <Link href={scheme.link} target="_blank" rel="noopener noreferrer">
+                                        Learn More <ExternalLink className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                    )) : (
+                        <p className="text-muted-foreground text-center py-4">No specific government schemes match this level of damage severity.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </>
       )}
 
     </div>
