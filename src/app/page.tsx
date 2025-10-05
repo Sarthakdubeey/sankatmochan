@@ -252,7 +252,7 @@ export default function Home() {
                                         </div>
                                         <div>
                                             <h3 className="font-semibold">{need.quantity}x {need.item}</h3>
-                                            <p className="text-sm text-muted-foreground">Urgency: <Badge variant={need.urgency === 'High' ? 'destructive' : 'secondary'}>{need.urgency}</Badge></p>
+                                            <div className="text-sm text-muted-foreground">Urgency: <Badge variant={need.urgency === 'High' ? 'destructive' : 'secondary'}>{need.urgency}</Badge></div>
                                         </div>
                                     </li>
                                 ))}
