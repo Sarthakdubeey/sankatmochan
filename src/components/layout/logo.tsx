@@ -19,8 +19,7 @@ export default function Logo({ className }: { className?: string }) {
       {/* Orange Flag */}
       <path
         d="M22 15 H 120 V 65 H 22 Z"
-        fill="hsl(24.6 95% 53.1%)"
-        stroke="hsl(24.6 95% 53.1%)"
+        className="fill-current text-orange-500"
         strokeWidth="2"
       />
     </svg>

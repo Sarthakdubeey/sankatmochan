@@ -59,6 +59,9 @@ const config = {
           accent: "hsl(var(--accent))",
           "accent-foreground": "hsl(var(--accent-foreground))",
           ring: "hsl(var(--ring))",
+        },
+        orange: {
+          '500': 'hsl(24.6 95% 53.1%)',
         }
       },
       borderRadius: {
