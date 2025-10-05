@@ -36,7 +36,7 @@ export default function AdvisoriesPage() {
   };
 
   return (
-    <div className="min-h-full w-full bg-gradient-to-br from-[#1a2a6c] via-[#b21f1f] to-[#fdbb2d] p-4 text-white -m-8">
+    <div className="w-full">
       <div className="container mx-auto">
         <Header />
         <div className="bg-black/40 rounded-2xl p-4 mb-8 backdrop-blur-lg shadow-2xl border border-white/10">
