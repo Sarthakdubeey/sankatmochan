@@ -4,6 +4,8 @@ import type { LucideIcon } from "lucide-react";
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { GeoPoint, Timestamp } from "firebase/firestore";
 import type { AssessDamageOutput } from "@/ai/flows/assess-damage-flow";
+export type { Notification, ApiStatus } from "@/app/types/notification";
+
 
 export type Alert = {
   id: string;
