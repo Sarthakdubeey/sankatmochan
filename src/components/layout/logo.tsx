@@ -8,20 +8,6 @@ export default function Logo({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Text behind the flag */}
-      <text
-        x="68"
-        y="85"
-        fontFamily="'PT Sans', sans-serif"
-        fontSize="18"
-        fontWeight="bold"
-        fill="hsl(var(--sidebar-foreground))"
-        textAnchor="middle"
-        className="opacity-50"
-      >
-        Sankat Mochan
-      </text>
-
       {/* Flag pole */}
       <path
         d="M20 90V10"
