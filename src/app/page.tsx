@@ -1,12 +1,12 @@
 
 'use client';
 
-import { Header } from '@/components/advisories/Header';
-import { NotificationBar } from '@/components/advisories/NotificationBar';
-import { ApiStatus } from '@/components/advisories/ApiStatus';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect }from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function Home() {
     const { user, loading } = useAuth();
@@ -29,14 +29,22 @@ export default function Home() {
   return (
     <div className="w-full">
       <div className="container mx-auto">
-        <Header />
-        <NotificationBar />
-        <ApiStatus />
+        <Card>
+            <CardHeader>
+                <CardTitle>Welcome to Sankat Mochan</CardTitle>
+                <CardDescription>Your disaster management assistant.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="mb-4">Navigate to the various sections of the app using the sidebar.</p>
+                <Button asChild>
+                    <Link href="/advisories">View Weather Advisories</Link>
+                </Button>
+            </CardContent>
+        </Card>
 
         <footer className="text-center mt-12 opacity-70">
             <p>
-            Real-Time Weather Alert System &copy; 2024 | 
-            Data sourced from IMD, NDMA, and Google Weather APIs
+                Sankat Mochan &copy; 2024
             </p>
         </footer>
       </div>
