@@ -40,33 +40,36 @@ export default function Home() {
         if (user) {
             setLoading(true);
 
-            // Listener for all high-priority alerts (excluding user's own SOS)
-            // Fetch by timestamp and filter client-side to avoid needing a composite index
+            // Listener for all high-priority alerts.
+            // Fetch by timestamp and filter client-side to avoid needing a composite index.
             const alertsQuery = query(
                 collection(db, 'alerts'),
                 orderBy('timestamp', 'desc'),
-                limit(20) // Fetch more to have enough to filter from
+                limit(20) // Fetch recent alerts to find relevant ones.
             );
             
             const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
-                const fetchedAlerts: Alert[] = [];
+                const highPriorityAlerts: Alert[] = [];
                 let foundUserSos: Alert | null = null;
 
                 snapshot.forEach(doc => {
                     const alert = { id: doc.id, ...doc.data() } as Alert;
                     
-                    // Separate the user's own SOS from the general high-priority alerts
+                    // Check for and specifically track the user's most recent SOS alert.
                     if (alert.severity === 'Critical' && alert.createdBy === user.uid) {
-                        foundUserSos = alert;
+                        // If we haven't found a user SOS yet, this is it.
+                        if (!foundUserSos) {
+                            foundUserSos = alert;
+                        }
                     } 
-                    // Filter for other high-priority alerts
+                    // Collect other high-priority alerts.
                     else if (alert.severity === 'High' || alert.severity === 'Critical') {
-                        fetchedAlerts.push(alert);
+                        highPriorityAlerts.push(alert);
                     }
                 });
 
-                setAlerts(fetchedAlerts.slice(0, 5)); // Take top 5 high-priority non-user alerts
-                setUserSosAlert(foundUserSos); // Set or update the user's SOS alert specifically
+                setAlerts(highPriorityAlerts.slice(0, 5)); // Take top 5 high-priority non-user alerts.
+                setUserSosAlert(foundUserSos); // Set or clear the user's SOS alert.
                 setError(null);
                 setLoading(false);
             }, (err) => {
@@ -76,27 +79,6 @@ export default function Home() {
                 errorEmitter.emit('permission-error', permissionError);
                 setLoading(false);
             });
-            
-            // This listener for the user's SOS is still useful for immediate updates if the above listener misses it.
-            const userSosQuery = query(
-                collection(db, 'alerts'),
-                where('createdBy', '==', user.uid),
-                where('severity', '==', 'Critical'),
-                orderBy('timestamp', 'desc'),
-                limit(1)
-            );
-
-            const unsubscribeUserSos = onSnapshot(userSosQuery, (snapshot) => {
-                 if (!snapshot.empty) {
-                    const sosAlert = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Alert;
-                    setUserSosAlert(sosAlert);
-                 } else {
-                    // This case handles when an acknowledged SOS is deleted
-                    // Only set to null if it was previously set, to avoid flicker
-                    if (userSosAlert) setUserSosAlert(null);
-                 }
-            });
-
 
             // Listener for community requests
             const needsQuery = query(
@@ -125,10 +107,9 @@ export default function Home() {
                 unsubscribeAlerts();
                 unsubscribeNeeds();
                 unsubscribeDamage();
-                unsubscribeUserSos();
             };
         }
-    }, [user, authLoading, router, t, userSosAlert]);
+    }, [user, authLoading, router, t]);
     
     
     if (authLoading || loading || !user) {
@@ -276,3 +257,5 @@ export default function Home() {
         </div>
     );
 }
+
+    
