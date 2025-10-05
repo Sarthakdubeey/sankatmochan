@@ -29,13 +29,16 @@ export function NotificationBar() {
     const unsubscribe = onSnapshot(alertsQuery, (snapshot) => {
         if (!snapshot.empty) {
             const latestAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Alert }));
-            const highPriorityAlert = latestAlerts.find(a => a.severity === 'Critical' || a.severity === 'High');
+            // Find the most recent, non-dismissed, high-priority alert
+            const highPriorityAlert = latestAlerts.find(a => 
+                (a.severity === 'Critical' || a.severity === 'High') && a.id !== dismissedId
+            );
 
-            if (highPriorityAlert && highPriorityAlert.id !== dismissedId) {
+            if (highPriorityAlert) {
                 setNotification(highPriorityAlert);
                 setIsVisible(true);
-            } else if (!highPriorityAlert) {
-                // If no high priority alerts in the recent batch, clear the notification
+            } else {
+                // If no relevant alerts are found, ensure the bar is hidden
                 setIsVisible(false);
                 setNotification(null);
             }
@@ -58,33 +61,29 @@ export function NotificationBar() {
     setIsVisible(false);
   }
 
-  if (!isVisible || !notification) {
-    return null;
-  }
-
   return (
      <AnimatePresence>
-        {isVisible && (
+        {isVisible && notification && (
             <motion.div
                 initial={{ opacity: 0, y: -50 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -50 }}
-                transition={{ duration: 0.3 }}
-                className="bg-destructive text-destructive-foreground z-50"
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="bg-destructive text-destructive-foreground z-50 shadow-lg"
             >
                 <div className="container mx-auto flex items-center justify-between p-3">
                     <div className="flex items-center gap-3">
-                        <AlertTriangle className="h-6 w-6" />
+                        <AlertTriangle className="h-6 w-6 flex-shrink-0" />
                         <div className="font-semibold">
-                            <span className="mr-2 uppercase">{notification.severity} ALERT:</span>
-                            <span>{notification.title}</span>
+                            <span className="mr-2 uppercase hidden sm:inline-block">{notification.severity} ALERT:</span>
+                            <span className="text-sm sm:text-base">{notification.title}</span>
                         </div>
                     </div>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleDismiss}
-                        className="hover:bg-destructive/50"
+                        className="hover:bg-destructive/50 h-8 w-8"
                     >
                         <X className="h-5 w-5" />
                         <span className="sr-only">Dismiss</span>

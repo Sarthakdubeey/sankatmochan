@@ -29,27 +29,35 @@ const getInsuranceSchemes = (severity: AssessDamageOutput['severity']) => {
     const baseSchemes = [
         {
             name: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
-            description: "Crop insurance for farmers against natural calamities.",
+            description: "Crop insurance for farmers against natural calamities, yield losses.",
             eligibility: "Farmers (including sharecroppers and tenant farmers) growing notified crops.",
             link: "https://pmfby.gov.in/",
             applicableSeverities: ['Minor', 'Moderate', 'Severe', 'Destroyed']
         },
         {
             name: "Restructured Weather Based Crop Insurance Scheme (RWBCIS)",
-            description: "Insurance for farmers against adverse weather incidences.",
-            eligibility: "Farmers in areas where the scheme is implemented.",
+            description: "Mitigates hardship of insured farmers against adverse weather incidences.",
+            eligibility: "All farmers including sharecroppers and tenant farmers growing notified crops in a notified area.",
             link: "https://agri-insurance.gov.in/rwbcis.aspx",
             applicableSeverities: ['Minor', 'Moderate', 'Severe', 'Destroyed']
         },
          {
             name: "State Disaster Response Fund (SDRF)",
-            description: "Immediate relief for victims of natural disasters, including housing damage.",
-            eligibility: "Varies by state. Based on damage assessment by local authorities.",
-            link: "#",
+            description: "Primary fund available with State Governments for responses to notified disasters, including housing assistance.",
+            eligibility: "Varies by state. Assistance is provided for damage to houses, and for gratuitous relief.",
+            link: "https://www.ndma.gov.in/sdrf",
             applicableSeverities: ['Moderate', 'Severe', 'Destroyed']
         },
+        {
+            name: "Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY)",
+            description: "Life insurance scheme, providing coverage for death due to any reason.",
+            eligibility: "Available to people in the age group of 18 to 50 years having a bank account.",
+            link: "https://www.jansuraksha.gov.in/",
+            applicableSeverities: ['Severe', 'Destroyed']
+        }
     ];
 
+    if (severity === 'No Damage') return [];
     return baseSchemes.filter(scheme => scheme.applicableSeverities.includes(severity));
 }
 
@@ -152,11 +160,11 @@ export default function DamageAssessmentPage() {
       
       setAnalysisResult(result);
 
-      if (location) {
+      if (location && user) {
          const geoPoint = new GeoPoint(location.latitude, location.longitude);
          // Save report to Firestore only if location is available
         await DamageReportService.createDamageReport({
-            userId: user!.uid,
+            userId: user.uid,
             description,
             imageUrl: imagePreview, // In a real app, upload to storage and save URL
             location: geoPoint,
@@ -170,7 +178,7 @@ export default function DamageAssessmentPage() {
       } else {
          toast({
             title: "Analysis Complete",
-            description: "The AI has assessed the damage. Report was not saved because location was unavailable.",
+            description: "The AI has assessed the damage. Report was not saved because location or user data was unavailable.",
             variant: "default"
          });
       }
@@ -290,15 +298,15 @@ export default function DamageAssessmentPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><ShieldCheck/> Government Scheme Information</CardTitle>
-                    <CardDescription>Based on the AI assessment, you may be eligible for the following schemes. This is not a guarantee of eligibility.</CardDescription>
+                    <CardDescription>Based on the AI assessment, you may be eligible for the following schemes. This is not a guarantee of eligibility and is for informational purposes only.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {relevantSchemes.length > 0 ? relevantSchemes.map(scheme => (
-                        <div key={scheme.name} className="p-4 border rounded-lg bg-background">
+                        <div key={scheme.name} className="p-4 border rounded-lg bg-background hover:bg-muted/50 transition-colors">
                             <h3 className="font-bold">{scheme.name}</h3>
                             <p className="text-sm text-muted-foreground mt-1">{scheme.description}</p>
                             <p className="text-sm mt-2"><span className="font-semibold">Eligibility:</span> {scheme.eligibility}</p>
-                            {scheme.link !== "#" && (
+                            {scheme.link && (
                                 <Button asChild variant="link" className="px-0 h-auto mt-2">
                                     <Link href={scheme.link} target="_blank" rel="noopener noreferrer">
                                         Learn More <ExternalLink className="ml-2 h-4 w-4" />
@@ -307,7 +315,7 @@ export default function DamageAssessmentPage() {
                             )}
                         </div>
                     )) : (
-                        <p className="text-muted-foreground text-center py-4">No specific government schemes match this level of damage severity.</p>
+                        <p className="text-muted-foreground text-center py-4">Based on the assessment, no specific government schemes were found. Please check with local authorities for relief options.</p>
                     )}
                 </CardContent>
             </Card>
