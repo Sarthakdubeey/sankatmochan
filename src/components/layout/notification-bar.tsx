@@ -14,26 +14,32 @@ export function NotificationBar() {
   const { user } = useAuth();
   const [notification, setNotification] = useState<Alert | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
+    // Fetch the most recent alerts and filter client-side to avoid index requirement.
     const alertsQuery = query(
         collection(db, 'alerts'),
-        where('severity', 'in', ['Critical', 'High']),
         orderBy('timestamp', 'desc'),
-        limit(1)
+        limit(5) // Fetch a few recent alerts to find a relevant one
     );
 
     const unsubscribe = onSnapshot(alertsQuery, (snapshot) => {
         if (!snapshot.empty) {
-            const latestAlert = snapshot.docs[0].data() as Alert;
-            
-            // Show notification only if it's new or different
-            if (notification?.id !== latestAlert.id) {
-                setNotification({ id: snapshot.docs[0].id, ...latestAlert });
+            const latestAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Alert }));
+            const highPriorityAlert = latestAlerts.find(a => a.severity === 'Critical' || a.severity === 'High');
+
+            if (highPriorityAlert && highPriorityAlert.id !== dismissedId) {
+                setNotification(highPriorityAlert);
                 setIsVisible(true);
+            } else if (!highPriorityAlert) {
+                // If no high priority alerts in the recent batch, clear the notification
+                setIsVisible(false);
+                setNotification(null);
             }
+
         } else {
              setNotification(null);
              setIsVisible(false);
@@ -43,9 +49,12 @@ export function NotificationBar() {
     });
 
     return () => unsubscribe();
-  }, [user, notification?.id]);
+  }, [user, dismissedId]);
   
   const handleDismiss = () => {
+    if (notification) {
+        setDismissedId(notification.id);
+    }
     setIsVisible(false);
   }
 
