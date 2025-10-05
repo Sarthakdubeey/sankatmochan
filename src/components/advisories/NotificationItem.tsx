@@ -1,5 +1,6 @@
 
 import { Notification } from '@/app/types/notification';
+import { formatDistanceToNow } from 'date-fns';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -21,61 +22,58 @@ const getIcon = (type: string, source: string) => {
 const getTypeStyles = (type: string) => {
   switch (type) {
     case 'critical':
-      return 'border-red-500 bg-red-500/10';
+      return 'border-red-500 bg-red-500/10 text-red-800 dark:text-red-300';
     case 'warning':
-      return 'border-orange-500 bg-orange-500/10';
+      return 'border-orange-500 bg-orange-500/10 text-orange-800 dark:text-orange-300';
     default:
-      return 'border-blue-500 bg-blue-500/10';
+      return 'border-blue-500 bg-blue-500/10 text-blue-800 dark:text-blue-300';
   }
 };
 
 const getSourceStyles = (source: string) => {
   switch (source) {
     case 'IMD':
-      return 'bg-blue-500/20 text-blue-300';
+      return 'bg-blue-200/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300';
     case 'NDMA':
-      return 'bg-red-500/20 text-red-300';
+      return 'bg-red-200/50 text-red-700 dark:bg-red-500/20 dark:text-red-300';
     case 'Google Weather':
-      return 'bg-green-500/20 text-green-300';
+      return 'bg-green-200/50 text-green-700 dark:bg-green-500/20 dark:text-green-300';
     default:
-      return 'bg-gray-500/20 text-gray-300';
+      return 'bg-gray-200/50 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300';
   }
 };
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({ notification, isClient }) => {
-  const timeAgo = isClient ? new Date(notification.timestamp).toLocaleTimeString() : '';
+  const timeAgo = isClient ? formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true }) : '';
 
   return (
-    <div className={`p-4 rounded-lg border-l-4 ${getTypeStyles(notification.type)} transition-all hover:scale-[1.02] hover:shadow-lg`}>
+    <div className={`p-4 rounded-lg border-l-4 ${getTypeStyles(notification.type)} transition-all hover:shadow-md`}>
       <div className="flex items-start gap-4">
-        <div className="text-2xl flex-shrink-0">
+        <div className="text-2xl flex-shrink-0 mt-1">
           {getIcon(notification.type, notification.source)}
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSourceStyles(notification.source)}`}>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getSourceStyles(notification.source)}`}>
               {notification.source}
             </span>
-            <span className="text-sm opacity-70">{timeAgo}</span>
+            <span className="text-xs text-muted-foreground">{timeAgo}</span>
           </div>
           
-          <p className="text-lg font-medium mb-2">{notification.message}</p>
+          <p className="font-medium text-foreground mb-2">{notification.message}</p>
           
-          <div className="flex flex-wrap gap-4 text-sm opacity-80">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {notification.area && (
               <span className="flex items-center gap-1">
-                📍 {notification.area}
+                <strong className="font-semibold">Area:</strong> {notification.area}
               </span>
             )}
             {notification.duration && (
               <span className="flex items-center gap-1">
-                ⏱️ {notification.duration}
+                <strong className="font-semibold">Duration:</strong> {notification.duration}
               </span>
             )}
-            <span className="flex items-center gap-1">
-              🚨 Severity: {notification.severity}/3
-            </span>
           </div>
         </div>
       </div>

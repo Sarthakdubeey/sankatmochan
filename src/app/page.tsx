@@ -11,12 +11,15 @@ import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/f
 import { db } from '@/lib/firebase/firebase';
 import type { Alert, ResourceNeed } from '@/lib/types';
 import { useLanguage } from '@/hooks/use-language';
-import { AlertTriangle, Building2, HeartHandshake, Loader2, ShieldCheck, Siren, Truck } from 'lucide-react';
+import { AlertTriangle, Building2, HeartHandshake, Loader2, RefreshCw, ShieldCheck, Siren, Truck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { errorEmitter } from '@/lib/firebase/error-emitter';
 import { FirestorePermissionError } from '@/lib/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNotifications } from '@/hooks/useNotifications';
+import { NotificationItem } from '@/components/advisories/NotificationItem';
+
 
 export default function Home() {
     const { user, loading: authLoading } = useAuth();
@@ -29,6 +32,7 @@ export default function Home() {
     const [damageReportCount, setDamageReportCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { notifications: weatherNotifications, isLoading: weatherLoading, refreshNotifications } = useNotifications();
 
 
     useEffect(() => {
@@ -261,6 +265,37 @@ export default function Home() {
                     </CardContent>
                 </Card>
             </div>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Live Weather Advisories</CardTitle>
+                    <Button variant="outline" size="sm" onClick={refreshNotifications} disabled={weatherLoading}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${weatherLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                     <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        {weatherLoading ? (
+                          <div className="text-center py-8">
+                            <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                            <p className="mt-2 text-muted-foreground">Loading advisories...</p>
+                          </div>
+                        ) : weatherNotifications.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <p>No active weather advisories.</p>
+                          </div>
+                        ) : (
+                          weatherNotifications.map((notification) => (
+                            <NotificationItem
+                              key={notification.id}
+                              notification={notification}
+                              isClient={true}
+                            />
+                          ))
+                        )}
+                      </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }
