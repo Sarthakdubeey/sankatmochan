@@ -18,6 +18,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -53,16 +56,13 @@ const config = {
           foreground: "hsl(var(--card-foreground))",
         },
         sidebar: {
-          DEFAULT: "hsl(var(--background))",
-          foreground: "hsl(var(--foreground))",
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
           border: "hsl(var(--border))",
           accent: "hsl(var(--accent))",
           "accent-foreground": "hsl(var(--accent-foreground))",
           ring: "hsl(var(--ring))",
         },
-        orange: {
-          '500': 'hsl(24.6 95% 53.1%)',
-        }
       },
       borderRadius: {
         lg: "var(--radius)",
