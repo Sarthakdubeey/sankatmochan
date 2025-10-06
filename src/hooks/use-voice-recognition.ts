@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 // Define the shape of the SpeechRecognition interface for TypeScript
 interface SpeechRecognition extends EventTarget {
@@ -32,28 +32,13 @@ export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionP
   const [isListening, setIsListening] = useState(false);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  
-  useEffect(() => {
-    // Check for microphone permission on mount
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(() => {
-        setIsPermissionGranted(true);
-      })
-      .catch((err) => {
-        setIsPermissionGranted(false);
-        console.error("Microphone access denied:", err);
-      });
-  }, []);
 
-
-  useEffect(() => {
-    if (!isPermissionGranted) return;
-
+  const setupRecognition = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false; // Listen for a single command at a time
-      recognition.interimResults = false; // We only care about the final result
+      recognition.continuous = false;
+      recognition.interimResults = false;
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
@@ -74,27 +59,59 @@ export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionP
 
       recognitionRef.current = recognition;
     }
+  }, [onCommand, onError]);
 
+  useEffect(() => {
+    if (isPermissionGranted) {
+      setupRecognition();
+    }
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
-  }, [isPermissionGranted, onCommand, onError]);
+  }, [isPermissionGranted, setupRecognition]);
 
-  const startListening = () => {
-    if (recognitionRef.current && isPermissionGranted) {
-      setIsListening(true);
-      recognitionRef.current.start();
-    } else if (!isPermissionGranted) {
-        if(onError) {
-            onError('not-allowed');
+  const startListening = async () => {
+    if (isListening || !window.navigator.mediaDevices) {
+      return;
+    }
+    
+    if (!isPermissionGranted) {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        setIsPermissionGranted(true);
+        // Recognition will be set up by the useEffect, we call start again inside it.
+      } catch (err) {
+        console.error("Microphone access denied:", err);
+        if (onError) {
+          onError('not-allowed');
         }
+        return;
+      }
+    }
+    
+    // Check if recognition is ready, if not, it will be started by the useEffect
+    if (recognitionRef.current) {
+        setIsListening(true);
+        recognitionRef.current.start();
     }
   };
 
+  // Effect to start listening once permission is granted and recognition is set up
+  useEffect(() => {
+    if (isPermissionGranted && recognitionRef.current && !isListening) {
+      // This ensures that if startListening was called before permission was granted,
+      // it will start listening now.
+      if (isListening) { // This seems counterintuitive, but we re-check state
+        recognitionRef.current.start();
+      }
+    }
+  }, [isPermissionGranted, isListening]);
+  
+
   const stopListening = () => {
-    if (recognitionRef.current) {
+    if (recognitionRef.current && isListening) {
       setIsListening(false);
       recognitionRef.current.stop();
     }
@@ -102,10 +119,8 @@ export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionP
 
   return {
     isListening,
-    isSupported: !!recognitionRef.current && isPermissionGranted,
+    isSupported: typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
     startListening,
     stopListening,
   };
 }
-
-    
