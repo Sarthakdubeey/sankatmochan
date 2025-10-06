@@ -37,13 +37,14 @@ export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionP
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = false; // Stop listening after one phrase
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
+      recognition.lang = 'en-IN'; // Use Indian English for better accuracy
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         onCommand(transcript);
+        setIsListening(false); // Stop listening after a command is processed
       };
 
       recognition.onerror = (event) => {
@@ -60,60 +61,46 @@ export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionP
       recognitionRef.current = recognition;
     }
   }, [onCommand, onError]);
-
+  
+  // Setup recognition as soon as permission is granted
   useEffect(() => {
     if (isPermissionGranted) {
       setupRecognition();
     }
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
   }, [isPermissionGranted, setupRecognition]);
 
+
   const startListening = async () => {
-    if (isListening || !window.navigator.mediaDevices) {
-      return;
-    }
-    
+    if (isListening) return;
+
     if (!isPermissionGranted) {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
         setIsPermissionGranted(true);
-        // Recognition will be set up by the useEffect, we call start again inside it.
+        // The useEffect will now set up recognition. We'll call start again in a moment.
       } catch (err) {
         console.error("Microphone access denied:", err);
-        if (onError) {
-          onError('not-allowed');
-        }
+        if (onError) onError('not-allowed');
         return;
       }
     }
     
-    // Check if recognition is ready, if not, it will be started by the useEffect
-    if (recognitionRef.current) {
-        setIsListening(true);
-        recognitionRef.current.start();
-    }
-  };
+    // Use a short timeout to allow recognition to be set up by the effect after permission is granted
+    setTimeout(() => {
+        if (recognitionRef.current) {
+            setIsListening(true);
+            recognitionRef.current.start();
+        } else if (onError) {
+            onError('not-ready');
+        }
+    }, 100);
 
-  // Effect to start listening once permission is granted and recognition is set up
-  useEffect(() => {
-    if (isPermissionGranted && recognitionRef.current && !isListening) {
-      // This ensures that if startListening was called before permission was granted,
-      // it will start listening now.
-      if (isListening) { // This seems counterintuitive, but we re-check state
-        recognitionRef.current.start();
-      }
-    }
-  }, [isPermissionGranted, isListening]);
-  
+  };
 
   const stopListening = () => {
     if (recognitionRef.current && isListening) {
-      setIsListening(false);
       recognitionRef.current.stop();
+      setIsListening(false);
     }
   };
 
