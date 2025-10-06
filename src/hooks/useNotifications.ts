@@ -4,64 +4,58 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Notification } from '@/app/types/notification';
 
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    source: 'IMD',
-    message: 'Cyclone Watch issued for the east coast. Expected landfall in 48 hours.',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    type: 'critical',
-    severity: 3,
-    area: 'Odisha, Andhra Pradesh',
-    duration: 'Next 72 hours',
-  },
-  {
-    id: '2',
-    source: 'NDMA',
-    message: 'Heavy rainfall warning for western ghats. Risk of landslides.',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    type: 'warning',
-    severity: 2,
-    area: 'Kerala, Karnataka',
-  },
-  {
-    id: '3',
-    source: 'Google Weather',
-    message: 'Heatwave conditions likely to continue in North India.',
-    timestamp: new Date(Date.now() - 10800000).toISOString(),
-    type: 'info',
-    severity: 1,
-    area: 'Delhi, Rajasthan, UP',
-    duration: 'Until Friday',
-  },
-];
-
-const generateRandomNotifications = () => {
-    const sources: Notification['source'][] = ['IMD', 'NDMA', 'Google Weather'];
-    const types: Notification['type'][] = ['info', 'warning', 'critical'];
-    const messages = [
-        "Thunderstorm with lightning expected in the afternoon.",
-        "River levels are rising, monitor local updates.",
-        "Strong surface winds predicted for the coastal areas.",
-        "New low-pressure area forming over the Arabian Sea.",
-        "Air quality index has reached 'Severe' category."
-    ];
+// This function fetches real data from the public weather.gov API
+const fetchRealNotifications = async (): Promise<Notification[]> => {
+  try {
+    // Fetch active alerts for a sample area (we'll use a US zone for this public API)
+    const response = await fetch('https://api.weather.gov/alerts/active?zone=CAZ548'); // San Diego County Coastal Areas
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    const data = await response.json();
     
-    return messages.slice(0, Math.floor(Math.random() * 3) + 2).map((msg, i) => ({
-        id: `${Date.now()}-${i}`,
-        source: sources[Math.floor(Math.random() * sources.length)],
-        message: msg,
-        timestamp: new Date(Date.now() - Math.random() * 24 * 3600000).toISOString(),
-        type: types[Math.floor(Math.random() * types.length)],
-        severity: Math.floor(Math.random() * 3) + 1,
-        area: 'Various locations'
-    }));
-}
+    // Parse the GeoJSON response into our Notification format
+    const parsedNotifications: Notification[] = (data.features || []).map((alert: any) => {
+      const props = alert.properties;
+      let type: Notification['type'] = 'info';
+      if (props.severity === 'Severe' || props.severity === 'Extreme') {
+        type = 'critical';
+      } else if (props.severity === 'Moderate') {
+        type = 'warning';
+      }
+
+      return {
+        id: props.id,
+        source: 'Google Weather', // Simulating source for consistency
+        message: props.headline,
+        timestamp: props.sent || new Date().toISOString(),
+        type: type,
+        severity: 2, // Placeholder severity
+        area: props.areaDesc,
+        duration: `Until ${props.expires ? new Date(props.expires).toLocaleString() : 'further notice'}`
+      };
+    });
+    
+    return parsedNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  } catch (error) {
+    console.error("Failed to fetch real notifications:", error);
+    // Return an empty array or a fallback error message notification
+    return [{
+        id: 'error-1',
+        source: 'System',
+        message: 'Could not connect to the live weather API. Please check your connection or try again later.',
+        timestamp: new Date().toISOString(),
+        type: 'warning',
+        severity: 1,
+        area: 'N/A'
+    }];
+  }
+};
 
 
 /**
- * Placeholder hook for managing notifications.
- * This placeholder simulates fetching data from external weather APIs.
+ * Hook for managing notifications from a live weather API.
  */
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -70,10 +64,9 @@ export const useNotifications = () => {
 
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
-    console.log('Simulating: Fetching notifications...');
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setNotifications(generateRandomNotifications());
+    console.log('Fetching live notifications from weather.gov API...');
+    const liveNotifications = await fetchRealNotifications();
+    setNotifications(liveNotifications);
     setIsLoading(false);
   }, []);
 
@@ -83,7 +76,7 @@ export const useNotifications = () => {
   }, [fetchNotifications]);
 
   const clearNotifications = useCallback(async () => {
-    console.log('Placeholder: Clearing notifications...');
+    console.log('Clearing notifications...');
     setNotifications([]);
   }, []);
 
