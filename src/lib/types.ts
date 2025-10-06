@@ -116,6 +116,59 @@ export type SurvivorStory = {
     timestamp: any;
 }
 
+// Insurance-related types translated from Python models
+export enum PolicyStatus {
+    ACTIVE = "active",
+    PENDING = "pending",
+    EXPIRED = "expired",
+    CLAIMED = "claimed",
+}
+
+export enum ClaimStatus {
+    REPORTED = "reported",
+    ASSESSING = "assessing",
+    APPROVED = "approved",
+    PAID = "paid",
+    REJECTED = "rejected",
+}
+
+export interface InsurancePolicy {
+    policyId: string;
+    userId: string;
+    premiumAmount: number;
+    coverageAmount: number;
+    startDate: Timestamp;
+    endDate: Timestamp;
+    status: PolicyStatus;
+    propertyDetails: Record<string, any>;
+    riskAssessment?: Record<string, any>;
+}
+
+export interface InsuranceDamageAssessment {
+    assessmentId: string;
+    policyId: string;
+    fireIncidentId: string; // Assuming this relates to a specific event ID
+    damageScore: number; // 0-1 scale
+    estimatedLoss: number;
+    assessmentMethod: "sensor" | "satellite" | "manual" | "ai_visual";
+    confidenceLevel: number;
+    evidenceData: Record<string, any>; // For sensor data, images, etc.
+    assessedBy: "ai_system" | string; // 'ai_system' or adjuster's ID
+    timestamp: Timestamp;
+}
+
+export interface InsuranceClaim {
+    claimId: string;
+    policyId: string;
+    assessmentId: string;
+    claimAmount: number;
+    status: ClaimStatus;
+    filedDate: Timestamp;
+    processedDate?: Timestamp;
+    payoutAmount?: number;
+    governmentSubsidy?: number;
+}
+
 
 export type Resource = {
   id: string;
