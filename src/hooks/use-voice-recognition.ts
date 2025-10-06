@@ -30,9 +30,25 @@ type UseVoiceRecognitionProps = {
 
 export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionProps) {
   const [isListening, setIsListening] = useState(false);
+  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  
+  useEffect(() => {
+    // Check for microphone permission on mount
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => {
+        setIsPermissionGranted(true);
+      })
+      .catch((err) => {
+        setIsPermissionGranted(false);
+        console.error("Microphone access denied:", err);
+      });
+  }, []);
+
 
   useEffect(() => {
+    if (!isPermissionGranted) return;
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -64,12 +80,16 @@ export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionP
         recognitionRef.current.stop();
       }
     };
-  }, [onCommand, onError]);
+  }, [isPermissionGranted, onCommand, onError]);
 
   const startListening = () => {
-    if (recognitionRef.current) {
+    if (recognitionRef.current && isPermissionGranted) {
       setIsListening(true);
       recognitionRef.current.start();
+    } else if (!isPermissionGranted) {
+        if(onError) {
+            onError('not-allowed');
+        }
     }
   };
 
@@ -82,7 +102,7 @@ export function useVoiceRecognition({ onCommand, onError }: UseVoiceRecognitionP
 
   return {
     isListening,
-    isSupported: !!recognitionRef.current,
+    isSupported: !!recognitionRef.current && isPermissionGranted,
     startListening,
     stopListening,
   };
