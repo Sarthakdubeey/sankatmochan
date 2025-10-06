@@ -273,26 +273,26 @@ export default function DamageAssessmentPage() {
       {analysisResult && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileCheck2/> Assessment Results</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div>
-                    <Label className="text-xs font-semibold text-muted-foreground">Severity</Label>
-                    <p className="text-2xl font-bold text-primary">{analysisResult.severity}</p>
-                </div>
-                <div>
-                    <Label className="text-xs font-semibold text-muted-foreground">Confidence</Label>
-                    <div className="flex items-center gap-2">
-                        <Percent className="h-5 w-5 text-muted-foreground"/>
-                        <p className="text-xl font-semibold">{analysisResult.confidenceScore.toFixed(2)}%</p>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><FileCheck2/> Assessment Results</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <Label className="text-xs font-semibold text-muted-foreground">Severity</Label>
+                        <p className="text-2xl font-bold text-primary">{analysisResult.severity}</p>
                     </div>
-                </div>
-                <div>
-                    <Label className="text-xs font-semibold text-muted-foreground">AI Reasoning</Label>
-                    <p className="text-sm text-foreground/90 bg-muted/50 p-3 rounded-md border">{analysisResult.reasoning}</p>
-                </div>
-            </CardContent>
+                    <div>
+                        <Label className="text-xs font-semibold text-muted-foreground">Confidence</Label>
+                        <div className="flex items-center gap-2">
+                            <Percent className="h-5 w-5 text-muted-foreground"/>
+                            <p className="text-xl font-semibold">{analysisResult.confidenceScore.toFixed(2)}%</p>
+                        </div>
+                    </div>
+                    <div>
+                        <Label className="text-xs font-semibold text-muted-foreground">AI Reasoning</Label>
+                        <p className="text-sm text-foreground/90 bg-muted/50 p-3 rounded-md border">{analysisResult.reasoning}</p>
+                    </div>
+                </CardContent>
             </Card>
 
             <Card>
