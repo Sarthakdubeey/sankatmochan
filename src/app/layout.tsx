@@ -11,7 +11,6 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { LanguageProvider } from '@/hooks/use-language';
 import Chatbot from '@/components/chatbot';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { NotificationBar } from '@/components/layout/notification-bar';
 
 
 // Leaflet CSS for react-leaflet
@@ -25,7 +24,7 @@ const ptSans = PT_Sans({
 
 
 export const metadata: Metadata = {
-  title: 'Sankat Mochan',
+  title: 'Aapda Guide',
   description: 'A disaster management app to help you stay safe.',
 };
 
@@ -44,7 +43,6 @@ export default function RootLayout({
                 <div className="flex min-h-screen w-full">
                   <SidebarNav />
                   <div className="flex flex-1 flex-col">
-                    <NotificationBar />
                     <Header />
                     <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
                   </div>
